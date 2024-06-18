@@ -13,7 +13,9 @@ public class CRUDInterface extends JFrame {
     private DefaultTableModel tableModel;
     private JButton btnAdicionar, btnModificar, btnEliminar, btnInactivar, btnReactivar, btnActualizar, btnCancelar, btnSalir;
     private int CarFlaAct = 0;
-
+    private PreparedStatement pstmt1;
+    private String operation = "";
+    
     public CRUDInterface() {
         setTitle("CRUD Interface");
         setLayout(new BorderLayout());
@@ -24,11 +26,14 @@ public class CRUDInterface extends JFrame {
         txtCodigo = new JTextField();
         dataPanel.add(txtCodigo);
         dataPanel.add(new JLabel("Nombre:"));
+        txtCodigo.setEditable(false);
+        
         txtNombre = new JTextField();
         dataPanel.add(txtNombre);
         dataPanel.add(new JLabel("Estado:"));
         lblEstado = new JLabel("A");
         dataPanel.add(lblEstado);
+        txtNombre.setEditable(false);
         add(dataPanel, BorderLayout.NORTH);
 
         // Panel de botones
@@ -78,7 +83,9 @@ public class CRUDInterface extends JFrame {
     private void cargarDatos() {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM pais")) {
+             ResultSet rs = stmt.executeQuery("SELECT * FROM pais ")) {
+            
+            tableModel.setRowCount(0);
             while (rs.next()) {
                 String codigo = rs.getString("COD_PAI");
                 String nombre = rs.getString("NOM_PAI");
@@ -91,26 +98,12 @@ public class CRUDInterface extends JFrame {
     }
 
     private void adicionar() {
-        String codigo = txtCodigo.getText();
-        String nombre = txtNombre.getText();
-        String estado = lblEstado.getText();
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO pais (COD_PAI, NOM_PAI, ESTADO) VALUES (?, ?, ?)")) {
-            pstmt.setString(1, codigo);
-            pstmt.setString(2, nombre);
-            pstmt.setString(3, estado);
-            pstmt.executeUpdate();
-            // Agregar el nuevo registro a la tabla
-            tableModel.addRow(new Object[]{codigo, nombre, estado});
-            // Limpiar los campos después de adicionar
-            txtCodigo.setText("");
-            txtNombre.setText("");
-            lblEstado.setText("A");
-            CarFlaAct = 0;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        lblEstado.setText("A");
+        txtCodigo.setEditable(true);
+        txtNombre.setEditable(true);
+        
+        CarFlaAct = 1;
+        operation = "Ad";
     }
 
     private void modificar() {
@@ -119,6 +112,7 @@ public class CRUDInterface extends JFrame {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNombre.setEditable(true);
             CarFlaAct = 1;
         }
     }
@@ -129,6 +123,7 @@ public class CRUDInterface extends JFrame {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("*");
+            operation = "Eli";
             CarFlaAct = 1;
         }
     }
@@ -155,26 +150,52 @@ public class CRUDInterface extends JFrame {
 
     private void actualizar() {
         if (CarFlaAct == 1) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET NOM_PAI = ?, ESTADO = ? WHERE COD_PAI = ?")) {
-                pstmt.setString(1, txtNombre.getText());
-                pstmt.setString(2, lblEstado.getText());
-                pstmt.setString(3, txtCodigo.getText());
-                pstmt.executeUpdate();
-                // Limpiar la tabla y volver a cargar los datos
-                tableModel.setRowCount(0);
-                cargarDatos();
+            try (Connection conn = DatabaseConnection.getConnection();) {
+                PreparedStatement pstmt;
+                String codigo = txtCodigo.getText();
+                String nombre = txtNombre.getText();
+                String estado = lblEstado.getText();
+                
+                if (operation.equals("Ad")) {
+                    pstmt= conn.prepareStatement("INSERT INTO pais (COD_PAI, NOM_PAI, ESTADO) VALUES (?, ?, ?)");
+                    pstmt.setString(1, codigo);
+                    pstmt.setString(2, nombre);
+                    pstmt.setString(3, estado);
+                    pstmt.executeUpdate();
+                    
+                    txtCodigo.setText("");
+                    txtNombre.setText("");
+                    lblEstado.setText("");
+                    CarFlaAct = 0;
+                } else {
+                   pstmt = conn.prepareStatement("UPDATE pais SET NOM_PAI = ?, ESTADO = ? WHERE COD_PAI = ?");
+                   pstmt.setString(1, nombre);
+                   pstmt.setString(2, estado);
+                   pstmt.setString(3, codigo);
+                   pstmt.executeUpdate();
+                   
+                   txtCodigo.setText("");
+                   txtNombre.setText("");
+                   lblEstado.setText("");
+                   CarFlaAct = 0;
+                }
+                
+                txtCodigo.setEditable(false);
+                txtNombre.setEditable(false);
+                
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+            
             CarFlaAct = 0;
+            cargarDatos();
         }
     }
 
     private void cancelar() {
         txtCodigo.setText("");
         txtNombre.setText("");
-        lblEstado.setText("A");
+        lblEstado.setText("");
         CarFlaAct = 0;
     }
 
