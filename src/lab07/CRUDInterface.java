@@ -196,6 +196,8 @@ public class CRUDInterface extends JFrame {
         txtCodigo.setText("");
         txtNombre.setText("");
         lblEstado.setText("");
+        txtCodigo.setEditable(false);
+        txtNombre.setEditable(false);
         CarFlaAct = 0;
     }
 
