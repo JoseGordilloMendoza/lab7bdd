@@ -26,6 +26,7 @@ public abstract class interfazGeneral extends JFrame {
         setLayout(new BorderLayout());
         JPanel dataPanel = new JPanel(new GridLayout(2 + attributeNames.length, 2));
         dataPanel.add(new JLabel("Código:"));
+        txtCodigo = new JTextField("");
         dataPanel.add(txtCodigo);
         txtCodigo.setEditable(false);
 
@@ -177,5 +178,32 @@ public abstract class interfazGeneral extends JFrame {
             }
             return c;
         }
+    }
+    
+    protected int generateNextCode(String nomTabla, String nomColumna) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT MAX("+ nomColumna +") FROM "+ nomTabla)) {
+            if (rs.next()) {
+                return rs.getInt(1) + 1;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 1; // Default code if table is empty
+    }
+    
+    protected boolean isDuplicateName(String nombre, String nomTabla, String nomColumna) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM "+ nomTabla +" WHERE "+ nomColumna +" = ?")) {
+            pstmt.setString(1, nombre);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 }

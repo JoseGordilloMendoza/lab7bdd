@@ -16,7 +16,6 @@ public class region extends interfazGeneral {
         super("CRUD Región Interface", new String[]{"País", "Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarPaises();
-        txtCodigo = new JTextField(generateNextCode());
     }
 
     private void cargarPaises() {
@@ -76,13 +75,13 @@ public class region extends interfazGeneral {
     @Override
     protected void adicionar() {
         try {
-            int codRegi = generateNextCode();
+            int codRegi = generateNextCode("region", "COD_REGI");
             String selectedItem = (String) comboCodPai.getSelectedItem();
             int codPai = Integer.parseInt(selectedItem.split(" / ")[0]);
             String nomRegi = txtAtributosExtras[1].getText();
             String estado = "A";
 
-            if (isDuplicateName(nomRegi)) {
+            if (isDuplicateName(nomRegi, "region", "NOM_REGI")) {
                 JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
                 return;
             }
@@ -232,32 +231,5 @@ public class region extends interfazGeneral {
         CarFlaAct = 0;
         operation = "";
         btnActualizar.setEnabled(false);
-    }
-
-    private boolean isDuplicateName(String nombre) {
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM region WHERE NOM_REGI = ?")) {
-            pstmt.setString(1, nombre);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next() && rs.getInt(1) > 0) {
-                    return true;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-    
-    private int generateNextCode() {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT MAX(COD_REGI) FROM region")) {
-            if (rs.next()) {
-                return rs.getInt(1) + 1;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 1; // Default code if table is empty
     }
 }

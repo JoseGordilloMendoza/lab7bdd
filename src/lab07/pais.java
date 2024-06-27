@@ -37,12 +37,12 @@ public class pais extends interfazGeneral {
         String nombre = txtAtributosExtras[0].getText();
         String estado = "A";
 
-        if (isDuplicateName(nombre)) {
+        if (isDuplicateName(nombre, "pais", "NOM_PAI")) {
             JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        int codigo = generateNextCode();
+        int codigo = generateNextCode("pais", "COD_PAI");
 
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement("INSERT INTO pais (COD_PAI, NOM_PAI, ESTADO) VALUES (?, ?, ?)")) {
@@ -57,34 +57,6 @@ public class pais extends interfazGeneral {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private boolean isDuplicateName(String nombre) {
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM pais WHERE NOM_PAI = ?")) {
-            pstmt.setString(1, nombre);
-            try (ResultSet rs = pstmt.executeQuery()) {
-                if (rs.next() && rs.getInt(1) > 0) {
-                    return true;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
-    private int generateNextCode() {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT MAX(COD_PAI) FROM pais")) {
-            if (rs.next()) {
-                return rs.getInt(1) + 1;
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 1; // Default code if table is empty
     }
 
     @Override
