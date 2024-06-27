@@ -7,6 +7,7 @@ public class cliente extends interfazGeneral {
 
     public cliente() {
         super("CRUD Cliente Interface", new String[]{"Nombre", "Apellido", "Dirección", "Teléfono", "Consumo P", "Consumo B", "Consumo C"});
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
     @Override

@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.HashSet;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public abstract class interfazGeneral extends JFrame {
     protected JTextField txtCodigo;
@@ -25,9 +26,8 @@ public abstract class interfazGeneral extends JFrame {
         setLayout(new BorderLayout());
         JPanel dataPanel = new JPanel(new GridLayout(2 + attributeNames.length, 2));
         dataPanel.add(new JLabel("Código:"));
-        txtCodigo = new JTextField();
         dataPanel.add(txtCodigo);
-        txtCodigo.setEditable(true);
+        txtCodigo.setEditable(false);
 
         // tamaño dinamico
         txtAtributosExtras = new JTextField[attributeNames.length];
@@ -159,5 +159,23 @@ public abstract class interfazGeneral extends JFrame {
     
     protected void salir() {
         dispose();
+    }
+    
+    protected class CustomTableCellRenderer extends DefaultTableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            String estado = table.getModel().getValueAt(row, table.getColumnCount() - 1).toString();
+            if (estado.equals("A")) {
+                c.setBackground(Color.GREEN);
+            } else if (estado.equals("I")) {
+                c.setBackground(Color.YELLOW);
+            } else if (estado.equals("*")) {
+                c.setBackground(Color.RED);
+            } else {
+                c.setBackground(Color.WHITE);
+            }
+            return c;
+        }
     }
 }

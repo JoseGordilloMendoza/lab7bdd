@@ -7,6 +7,7 @@ public class tam_art extends interfazGeneral {
 
     public tam_art() {
         super("CRUD TAMAÑO ARTICULOS Interface", new String[]{"Nombre"});
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
     @Override

@@ -7,6 +7,7 @@ public class turno extends interfazGeneral {
 
     public turno() {
         super("CRUD Turno Interface", new String[]{"Inicio", "Fin"});
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
     @Override

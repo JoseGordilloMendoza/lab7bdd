@@ -2,8 +2,6 @@ package lab07;
 
 import java.sql.*;
 import javax.swing.*;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 public class pais extends interfazGeneral {
@@ -180,24 +178,6 @@ public class pais extends interfazGeneral {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        }
-    }
-
-    private class CustomTableCellRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            String estado = table.getModel().getValueAt(row, table.getColumnCount() - 1).toString();
-            if (estado.equals("A")) {
-                c.setBackground(Color.GREEN);
-            } else if (estado.equals("I")) {
-                c.setBackground(Color.YELLOW);
-            } else if (estado.equals("*")) {
-                c.setBackground(Color.RED);
-            } else {
-                c.setBackground(Color.WHITE);
-            }
-            return c;
         }
     }
 }

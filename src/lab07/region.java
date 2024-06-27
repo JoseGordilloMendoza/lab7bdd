@@ -4,7 +4,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
 import java.util.HashMap;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.util.Map;
 
 public class region extends interfazGeneral {
@@ -17,6 +16,7 @@ public class region extends interfazGeneral {
         super("CRUD Región Interface", new String[]{"País", "Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarPaises();
+        txtCodigo = new JTextField(generateNextCode());
     }
 
     private void cargarPaises() {
@@ -259,24 +259,5 @@ public class region extends interfazGeneral {
             e.printStackTrace();
         }
         return 1; // Default code if table is empty
-    }
-    
-    private class CustomTableCellRenderer extends DefaultTableCellRenderer {
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            String estado = table.getModel().getValueAt(row, table.getColumnCount() - 1).toString();
-            if (estado.equals("A")) {
-                c.setBackground(Color.GREEN);
-            } else if (estado.equals("I")) {
-                c.setBackground(Color.YELLOW);
-            } else if (estado.equals("*")) {
-                c.setBackground(Color.RED);
-            } else {
-                c.setBackground(Color.WHITE);
-            }
-            return c;
-        }
     }
 }
