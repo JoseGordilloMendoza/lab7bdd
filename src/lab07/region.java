@@ -4,25 +4,26 @@ import javax.swing.*;
 import java.awt.*;
 import java.sql.*;
 import java.util.HashMap;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.util.Map;
 
 public class region extends interfazGeneral {
+
     private JComboBox<String> comboCodPai;
     private Map<String, Integer> paisMap;
+    
 
     public region() {
         super("CRUD Región Interface", new String[]{"País", "Nombre"});
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarPaises();
     }
 
-    // Cargar los países en el JComboBox y en un mapa
     private void cargarPaises() {
         paisMap = new HashMap<>();
         comboCodPai = new JComboBox<>();
-        
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT COD_PAI, NOM_PAI FROM pais WHERE ESTADO = 'A'")) {
+
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_PAI, NOM_PAI FROM pais WHERE ESTADO = 'A'")) {
 
             while (rs.next()) {
                 int codPai = rs.getInt("COD_PAI");
@@ -34,10 +35,9 @@ public class region extends interfazGeneral {
             e.printStackTrace();
         }
 
-        // Reemplazar el campo de texto para COD_PAI con el JComboBox
         JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
         dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboCodPai, 3); // Agregar el JComboBox en la posición correspondiente
+        dataPanel.add(comboCodPai, 3);
 
         revalidate();
         repaint();
@@ -45,9 +45,7 @@ public class region extends interfazGeneral {
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT r.COD_REGI, r.COD_PAI, r.NOM_REGI, r.ESTADO, p.NOM_PAI FROM region r JOIN pais p ON r.COD_PAI = p.COD_PAI")) {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT r.COD_REGI, r.COD_PAI, r.NOM_REGI, r.ESTADO, p.NOM_PAI FROM region r JOIN pais p ON r.COD_PAI = p.COD_PAI")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
@@ -59,7 +57,6 @@ public class region extends interfazGeneral {
                 String estado = rs.getString("ESTADO");
 
                 usedCodes.add(codRegi);
-                
                 tableModel.addRow(new Object[]{codRegi, codPai + " / " + nomPai, nomRegi, estado});
             }
         } catch (SQLException e) {
@@ -79,15 +76,19 @@ public class region extends interfazGeneral {
     @Override
     protected void adicionar() {
         try {
-            int codRegi = Integer.parseInt(txtCodigo.getText());
+            int codRegi = generateNextCode();
             String selectedItem = (String) comboCodPai.getSelectedItem();
-            int codPai = Integer.parseInt(selectedItem.split(" / ")[0]); // Extraer COD_PAI del combo box
+            int codPai = Integer.parseInt(selectedItem.split(" / ")[0]);
             String nomRegi = txtAtributosExtras[1].getText();
             String estado = "A";
 
+            if (isDuplicateName(nomRegi)) {
+                JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             if (!usedCodes.contains(codRegi)) {
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("INSERT INTO region (COD_REGI, COD_PAI, NOM_REGI, ESTADO) VALUES (?, ?, ?, ?)")) {
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO region (COD_REGI, COD_PAI, NOM_REGI, ESTADO) VALUES (?, ?, ?, ?)")) {
                     pstmt.setInt(1, codRegi);
                     pstmt.setInt(2, codPai);
                     pstmt.setString(3, nomRegi);
@@ -162,6 +163,7 @@ public class region extends interfazGeneral {
             comboCodPai.setEnabled(false);
             txtAtributosExtras[1].setEditable(false);
             btnActualizar.setEnabled(true);
+            actualizar();
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -181,6 +183,7 @@ public class region extends interfazGeneral {
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
+            actualizar();
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -194,20 +197,19 @@ public class region extends interfazGeneral {
             try {
                 int codRegi = Integer.parseInt(txtCodigo.getText());
                 String selectedItem = (String) comboCodPai.getSelectedItem();
-                int codPai = Integer.parseInt(selectedItem.split(" / ")[0]); // Extraer COD_PAI del combo box
+                int codPai = Integer.parseInt(selectedItem.split(" / ")[0]);
                 String nomRegi = txtAtributosExtras[1].getText();
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET COD_PAI = ?, NOM_REGI = ?, ESTADO = ? WHERE COD_REGI = ?")) {
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET COD_PAI = ?, NOM_REGI = ?, ESTADO = ? WHERE COD_REGI = ?")) {
                     pstmt.setInt(1, codPai);
                     pstmt.setString(2, nomRegi);
                     pstmt.setString(3, estado);
                     pstmt.setInt(4, codRegi);
                     pstmt.executeUpdate();
 
-                    cargarDatos();
                     cancelar();
+                    cargarDatos();
                 } catch (SQLException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -215,6 +217,66 @@ public class region extends interfazGeneral {
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "Código de región inválido.", "Error", JOptionPane.ERROR_MESSAGE);
             }
+        }
+    }
+
+    @Override
+    protected void cancelar() {
+        txtCodigo.setText("");
+        comboCodPai.setSelectedIndex(0);
+        txtAtributosExtras[1].setText("");
+        lblEstado.setText("A");
+        txtCodigo.setEditable(true);
+        comboCodPai.setEnabled(true);
+        txtAtributosExtras[1].setEditable(true);
+        CarFlaAct = 0;
+        operation = "";
+        btnActualizar.setEnabled(false);
+    }
+
+    private boolean isDuplicateName(String nombre) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM region WHERE NOM_REGI = ?")) {
+            pstmt.setString(1, nombre);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
+    private int generateNextCode() {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT MAX(COD_REGI) FROM region")) {
+            if (rs.next()) {
+                return rs.getInt(1) + 1;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 1; // Default code if table is empty
+    }
+    
+    private class CustomTableCellRenderer extends DefaultTableCellRenderer {
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+            Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            String estado = table.getModel().getValueAt(row, table.getColumnCount() - 1).toString();
+            if (estado.equals("A")) {
+                c.setBackground(Color.GREEN);
+            } else if (estado.equals("I")) {
+                c.setBackground(Color.YELLOW);
+            } else if (estado.equals("*")) {
+                c.setBackground(Color.RED);
+            } else {
+                c.setBackground(Color.WHITE);
+            }
+            return c;
         }
     }
 }

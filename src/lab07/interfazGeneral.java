@@ -156,7 +156,7 @@ public abstract class interfazGeneral extends JFrame {
         btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
     }
-
+    
     protected void salir() {
         dispose();
     }
