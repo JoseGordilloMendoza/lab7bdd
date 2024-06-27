@@ -13,7 +13,8 @@ public class CRUDInterface extends JFrame {
 
         JPanel selectorPanel = new JPanel();
         selectorPanel.add(new JLabel("Selecciona la tabla:"));
-        tableSelector = new JComboBox<>(new String[]{"pais", "tamaño_del_articulo", "procedencia_de_pedido", "tipo_de_regalo", "turno", "cliente"});
+        tableSelector = new JComboBox<>(new String[]{"pais", "tamaño_del_articulo",
+            "procedencia_de_pedido", "tipo_de_regalo", "turno", "cliente","region"});
         selectorPanel.add(tableSelector);
         add(selectorPanel, BorderLayout.CENTER);
 
@@ -47,6 +48,9 @@ public class CRUDInterface extends JFrame {
                     break;
                 case "cliente":
                     new cliente();
+                    break;
+                case "region":
+                    new region ();
                     break;
                 default:
                     JOptionPane.showMessageDialog(this, "Tabla no reconocida", "Error", JOptionPane.ERROR_MESSAGE);

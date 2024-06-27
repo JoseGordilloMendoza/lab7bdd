@@ -133,15 +133,27 @@ public abstract class interfazGeneral extends JFrame {
     protected abstract void actualizar();
 
     protected void cancelar() {
+        // Limpiar campos de texto
         txtCodigo.setText("");
         for (JTextField txtAtributoExtra : txtAtributosExtras) {
             txtAtributoExtra.setText("");
         }
         lblEstado.setText("");
+
+        // Deseleccionar cualquier fila en la tabla
+        table.clearSelection();
+
+        // Restablecer la configuración inicial de los botones y campos de texto
         txtCodigo.setEditable(true);
         for (JTextField txtAtributoExtra : txtAtributosExtras) {
             txtAtributoExtra.setEditable(true);
         }
+
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
     }
 
