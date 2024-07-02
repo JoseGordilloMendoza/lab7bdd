@@ -28,6 +28,42 @@ public class CRUDInterface extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(300, 200);
         setVisible(true);
+
+        // Aplicar la fuente predeterminada a toda la interfaz
+        applyDefaultFont();
+    }
+
+    private void applyDefaultFont() {
+        Font defaultFont = interfazGeneral.DEFAULT_FONT;
+
+        // Aplicar la fuente a todos los componentes
+        Component[] components = getContentPane().getComponents();
+        for (Component component : components) {
+            if (component instanceof JPanel) {
+                JPanel panel = (JPanel) component;
+                applyFontToPanel(panel, defaultFont);
+            } else if (component instanceof JButton) {
+                JButton button = (JButton) component;
+                button.setFont(defaultFont);
+            } else if (component instanceof JLabel) {
+                JLabel label = (JLabel) component;
+                label.setFont(defaultFont);
+            } else if (component instanceof JComboBox) {
+                JComboBox comboBox = (JComboBox) component;
+                comboBox.setFont(defaultFont);
+            }
+        }
+    }
+
+    private void applyFontToPanel(JPanel panel, Font font) {
+        Component[] components = panel.getComponents();
+        for (Component component : components) {
+            if (component instanceof JPanel) {
+                applyFontToPanel((JPanel) component, font);
+            } else {
+                component.setFont(font);
+            }
+        }
     }
 
     private void seleccionarTabla() {
@@ -74,7 +110,7 @@ public class CRUDInterface extends JFrame {
                     new regaloAlmacen();
                     break;
                 case "tipo_de_articulo":
-                    new tip_art ();
+                    new tip_art();
                     break;
                 case "ingrediente":
                     new ingrediente();

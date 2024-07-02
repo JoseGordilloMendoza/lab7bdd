@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.HashSet;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public abstract class interfazGeneral extends JFrame {
@@ -21,6 +22,9 @@ public abstract class interfazGeneral extends JFrame {
     protected HashSet<Integer> usedCodes = new HashSet<>();
     protected JTextField[] txtAtributosExtras;
     protected JLabel[] lblAtributosExtras;
+
+    // Fuente global para toda la interfaz
+    protected static final Font DEFAULT_FONT = new Font("Oswald", Font.BOLD, 14);
 
     public interfazGeneral(String title, String[] attributeNames) {
         setTitle(title);
@@ -76,6 +80,9 @@ public abstract class interfazGeneral extends JFrame {
         table = new JTable(tableModel);
         add(new JScrollPane(table), BorderLayout.CENTER);
 
+        // Configurar la fuente global
+        setUIFont(new FontUIResource(DEFAULT_FONT));
+
         // Acciones de los botones
         btnAdicionar.addActionListener(e -> adicionar());
         btnModificar.addActionListener(e -> modificar());
@@ -118,6 +125,41 @@ public abstract class interfazGeneral extends JFrame {
         setSize(800, 600);
         setVisible(true);
         btnActualizar.setEnabled(true);
+    }
+
+    // Método para establecer la fuente global en todos los componentes
+    private static void setUIFont(FontUIResource f) {
+        UIManager.put("Button.font", f);
+        UIManager.put("ToggleButton.font", f);
+        UIManager.put("RadioButton.font", f);
+        UIManager.put("CheckBox.font", f);
+        UIManager.put("ColorChooser.font", f);
+        UIManager.put("ComboBox.font", f);
+        UIManager.put("Label.font", f);
+        UIManager.put("List.font", f);
+        UIManager.put("MenuBar.font", f);
+        UIManager.put("MenuItem.font", f);
+        UIManager.put("RadioButtonMenuItem.font", f);
+        UIManager.put("CheckBoxMenuItem.font", f);
+        UIManager.put("Menu.font", f);
+        UIManager.put("PopupMenu.font", f);
+        UIManager.put("OptionPane.font", f);
+        UIManager.put("Panel.font", f);
+        UIManager.put("ProgressBar.font", f);
+        UIManager.put("ScrollPane.font", f);
+        UIManager.put("Viewport.font", f);
+        UIManager.put("TabbedPane.font", f);
+        UIManager.put("Table.font", f);
+        UIManager.put("TableHeader.font", f);
+        UIManager.put("TextField.font", f);
+        UIManager.put("PasswordField.font", f);
+        UIManager.put("TextArea.font", f);
+        UIManager.put("TextPane.font", f);
+        UIManager.put("EditorPane.font", f);
+        UIManager.put("TitledBorder.font", f);
+        UIManager.put("ToolBar.font", f);
+        UIManager.put("ToolTip.font", f);
+        UIManager.put("Tree.font", f);
     }
 
     protected abstract void cargarDatos();
@@ -170,12 +212,13 @@ public abstract class interfazGeneral extends JFrame {
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             String estado = table.getModel().getValueAt(row, table.getColumnCount() - 1).toString();
+            Color colorPaEliminado = new Color(255, 118, 89);
             if (estado.equals("A")) {
                 c.setBackground(Color.GREEN);
             } else if (estado.equals("I")) {
                 c.setBackground(Color.YELLOW);
             } else if (estado.equals("*")) {
-                c.setBackground(Color.RED);
+                c.setBackground(colorPaEliminado);
             } else {
                 c.setBackground(Color.WHITE);
             }
