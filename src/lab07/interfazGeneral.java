@@ -9,6 +9,7 @@ import java.util.HashSet;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public abstract class interfazGeneral extends JFrame {
+
     protected JTextField txtCodigo;
     protected JLabel lblEstado;
     protected JTable table;
@@ -28,7 +29,7 @@ public abstract class interfazGeneral extends JFrame {
         dataPanel.add(new JLabel("Código:"));
         txtCodigo = new JTextField("");
         dataPanel.add(txtCodigo);
-        txtCodigo.setEditable(false);
+        txtCodigo.setEditable(true);
 
         // tamaño dinamico
         txtAtributosExtras = new JTextField[attributeNames.length];
@@ -158,12 +159,13 @@ public abstract class interfazGeneral extends JFrame {
         btnActualizar.setEnabled(false);
         cargarDatos();
     }
-    
+
     protected void salir() {
         dispose();
     }
-    
+
     protected class CustomTableCellRenderer extends DefaultTableCellRenderer {
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -180,22 +182,21 @@ public abstract class interfazGeneral extends JFrame {
             return c;
         }
     }
-    
+
     protected int generateNextCode(String nomTabla, String nomColumna) {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT MAX("+ nomColumna +") FROM "+ nomTabla)) {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT MAX(" + nomColumna + ") FROM " + nomTabla)) {
             if (rs.next()) {
-                return rs.getInt(1) + 1;
+                int maxCodigo = rs.getInt(1);
+                return maxCodigo == 0 ? 1 : maxCodigo + 1;
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return 1; // Default code if table is empty
+        return 1; // Código por defecto si la tabla está vacía o ocurre un error
     }
-    
+
     protected boolean isDuplicateName(String nombre, String nomTabla, String nomColumna) {
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM "+ nomTabla +" WHERE "+ nomColumna +" = ?")) {
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM " + nomTabla + " WHERE " + nomColumna + " = ?")) {
             pstmt.setString(1, nombre);
             try (ResultSet rs = pstmt.executeQuery()) {
                 if (rs.next() && rs.getInt(1) > 0) {

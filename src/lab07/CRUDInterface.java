@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 
 public class CRUDInterface extends JFrame {
+
     private JComboBox<String> tableSelector;
 
     public CRUDInterface() {
@@ -14,8 +15,9 @@ public class CRUDInterface extends JFrame {
         JPanel selectorPanel = new JPanel();
         selectorPanel.add(new JLabel("Selecciona la tabla:"));
         tableSelector = new JComboBox<>(new String[]{"pais", "tamaño_del_articulo",
-            "procedencia_de_pedido", "tipo_de_regalo", "turno", "cliente","region", "tipo_de_articulo",
-            "ingrediente", "receta"});
+            "procedencia_de_pedido", "tipo_de_regalo", "turno", "cliente", "region", "tipo_de_articulo",
+            "ingrediente", "receta",
+            "franquicia", "localidad", "ciudad", "almacen", "ingrediente Almacen", "regalos Almacen"});
         selectorPanel.add(tableSelector);
         add(selectorPanel, BorderLayout.CENTER);
 
@@ -51,7 +53,25 @@ public class CRUDInterface extends JFrame {
                     new cliente();
                     break;
                 case "region":
-                    new region ();
+                    new region();
+                    break;
+                case "franquicia":
+                    new franquicia();
+                    break;
+                case "localidad":
+                    new localidad();
+                    break;
+                case "ciudad":
+                    new ciudad();
+                    break;
+                case "almacen":
+                    new almacen();
+                    break;
+                case "ingrediente Almacen":
+                    new ingredienteAlmacen();
+                    break;
+                case "regalos Almacen":
+                    new regaloAlmacen();
                     break;
                 case "tipo_de_articulo":
                     new tip_art ();
