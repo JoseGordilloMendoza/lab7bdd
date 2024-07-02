@@ -48,6 +48,7 @@ public class region extends interfazGeneral {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
+            txtCodigo.setText("" + generateNextCode("ingrediente", "ING_ID"));
             while (rs.next()) {
                 int codRegi = rs.getInt("COD_REGI");
                 int codPai = rs.getInt("COD_PAI");

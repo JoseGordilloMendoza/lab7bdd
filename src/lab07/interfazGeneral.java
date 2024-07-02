@@ -145,7 +145,7 @@ public abstract class interfazGeneral extends JFrame {
         table.clearSelection();
 
         // Restablecer la configuración inicial de los botones y campos de texto
-        txtCodigo.setEditable(true);
+        txtCodigo.setEditable(false);
         for (JTextField txtAtributoExtra : txtAtributosExtras) {
             txtAtributoExtra.setEditable(true);
         }
@@ -156,6 +156,7 @@ public abstract class interfazGeneral extends JFrame {
         btnInactivar.setEnabled(false);
         btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
+        cargarDatos();
     }
     
     protected void salir() {
