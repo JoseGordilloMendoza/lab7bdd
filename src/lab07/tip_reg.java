@@ -7,13 +7,12 @@ public class tip_reg extends interfazGeneral {
 
     public tip_reg() {
         super("CRUD Tipo de Regalo Interface", new String[]{"Categoría"});
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM tipo_de_regalo")) {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM tipo_de_regalo")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
@@ -32,28 +31,27 @@ public class tip_reg extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String codigo = txtCodigo.getText();
-        String categoria = txtAtributosExtras[0].getText();
+        String nombre = txtAtributosExtras[0].getText();
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(codigo))) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO tipo_de_regalo (COD_TIP_REG, CAT_REG, ESTADO) VALUES (?, ?, ?)")) {
-                pstmt.setString(1, codigo);
-                pstmt.setString(2, categoria);
-                pstmt.setString(3, estado);
-                pstmt.executeUpdate();
+        if (isDuplicateName(nombre, "tipo_de_regalo", "CAT_REG")) {
+            JOptionPane.showMessageDialog(this, "La categoría ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
 
-                cargarDatos();
-                txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
-                lblEstado.setText("");
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "El registro con la clave " + codigo + " ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+        int codigo = generateNextCode("tipo_de_regalo", "COD_TIP_REG");
+
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO tipo_de_regalo (COD_TIP_REG, CAT_REG, ESTADO) VALUES (?, ?, ?)")) {
+            pstmt.setInt(1, codigo);
+            pstmt.setString(2, nombre);
+            pstmt.setString(3, estado);
+            pstmt.executeUpdate();
+
+            cargarDatos();
+            cancelar();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -64,11 +62,11 @@ public class tip_reg extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtCodigo.setEditable(false);
             txtAtributosExtras[0].setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
-            txtCodigo.setEnabled(false);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -80,23 +78,13 @@ public class tip_reg extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                String codigo = tableModel.getValueAt(selectedRow, 0).toString();
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_regalo SET ESTADO = '*' WHERE COD_TIP_REG = ?")) {
-                    pstmt.setString(1, codigo);
-                    pstmt.executeUpdate();
-
-                    cargarDatos();
-                    txtCodigo.setText("");
-                    txtAtributosExtras[0].setText("");
-                    lblEstado.setText("");
-                    txtCodigo.setEditable(true);
-                    txtAtributosExtras[0].setEditable(true);
-                    btnActualizar.setEnabled(false);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                lblEstado.setText("*");
+                operation = "mod";
+                CarFlaAct = 1;
+                btnActualizar.setEnabled(true);
+                actualizar();
             }
         }
     }
@@ -105,25 +93,19 @@ public class tip_reg extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            String codigo = tableModel.getValueAt(selectedRow, 0).toString();
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_regalo SET ESTADO = 'I' WHERE COD_TIP_REG = ?")) {
-                pstmt.setString(1, codigo);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
-                lblEstado.setText("");
-                txtCodigo.setEditable(true);
-                txtAtributosExtras[0].setEditable(true);
-                btnActualizar.setEnabled(false);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
+            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            lblEstado.setText("I");
+            CarFlaAct = 1;
+            operation = "mod";
+            txtCodigo.setEditable(false);
+            txtAtributosExtras[0].setEditable(false);
+            btnActualizar.setEnabled(true);
+            actualizar();
+        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
+        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
+            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -131,25 +113,17 @@ public class tip_reg extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            String codigo = tableModel.getValueAt(selectedRow, 0).toString();
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_regalo SET ESTADO = 'A' WHERE COD_TIP_REG = ?")) {
-                pstmt.setString(1, codigo);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
-                lblEstado.setText("");
-                txtCodigo.setEditable(true);
-                txtAtributosExtras[0].setEditable(true);
-                btnActualizar.setEnabled(false);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
+            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            lblEstado.setText("A");
+            CarFlaAct = 1;
+            operation = "mod";
+            btnActualizar.setEnabled(true);
+            actualizar();
+        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
+        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
+            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -159,20 +133,14 @@ public class tip_reg extends interfazGeneral {
             String codigo = txtCodigo.getText();
             String categoria = txtAtributosExtras[0].getText();
             String estado = lblEstado.getText();
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_regalo SET CAT_REG = ?, ESTADO = ? WHERE COD_TIP_REG = ?")) {
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_regalo SET CAT_REG = ?, ESTADO = ? WHERE COD_TIP_REG = ?")) {
                 pstmt.setString(1, categoria);
                 pstmt.setString(2, estado);
                 pstmt.setString(3, codigo);
                 pstmt.executeUpdate();
 
                 cargarDatos();
-                txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
-                lblEstado.setText("");
-                txtCodigo.setEditable(true);
-                txtAtributosExtras[0].setEditable(true);
-                btnActualizar.setEnabled(false);
+                cancelar();
             } catch (SQLException e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
