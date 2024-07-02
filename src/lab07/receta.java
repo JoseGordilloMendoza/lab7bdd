@@ -97,6 +97,22 @@ public class receta extends interfazGeneral {
         }
     }
 
+    private boolean isDuplicateIngredient(int codTipArt, int ingId) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM receta WHERE COD_TIP_ART = ? AND ING_ID = ?")) {
+            pstmt.setInt(1, codTipArt);
+            pstmt.setInt(2, ingId);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next() && rs.getInt(1) > 0) {
+                    return true;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     @Override
     protected void adicionar() {
         try {
@@ -107,6 +123,11 @@ public class receta extends interfazGeneral {
             String selectedItemIngrediente = (String) comboIngrediente.getSelectedItem();
             int ingId = Integer.parseInt(selectedItemIngrediente.split(" / ")[0]);
             String estado = "A";
+
+            if (isDuplicateIngredient(codTipArt, ingId)) {
+                JOptionPane.showMessageDialog(this, "El artículo ya tiene este ingrediente asignado.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             if (!usedCodes.contains(codRec)) {
                 try (Connection conn = DatabaseConnection.getConnection();
@@ -213,8 +234,13 @@ public class receta extends interfazGeneral {
             int ingId = Integer.parseInt(selectedItemIngrediente.split(" / ")[0]);
             String estado = lblEstado.getText();
 
+            if (isDuplicateIngredient(codTipArt, ingId)) {
+                JOptionPane.showMessageDialog(this, "El artículo ya tiene este ingrediente asignado.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET COD_TIP_ART = ?, INS = ?, ING_ID = ?, ESTADO = ? WHERE COD_REC = ?")) {
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET COD_TIP_ART = ?, INS = ?, ING_ID = ?, ESTADO = ? WHERE COD_RECETA = ?")) {
                 pstmt.setInt(1, codTipArt);
                 pstmt.setString(2, ins);
                 pstmt.setInt(3, ingId);
