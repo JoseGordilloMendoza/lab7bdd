@@ -4,10 +4,13 @@ import java.sql.*;
 import javax.swing.*;
 
 public class ingrediente extends interfazGeneral {
+    private JTextField txtNombre;
 
     public ingrediente() {
         super("CRUD Ingrediente Interface", new String[]{"Nombre"});
+        txtNombre = new JTextField();
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        addExtraComponent(0, txtNombre);
     }
 
     @Override
@@ -34,7 +37,7 @@ public class ingrediente extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String nombre = txtAtributosExtras[0].getText();
+        String nombre = txtNombre.getText();
         String estado = "A";
 
         if (isDuplicateName(nombre, "ingrediente", "NOM_ING")) {
@@ -64,10 +67,10 @@ public class ingrediente extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(true);
+            txtNombre.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -83,7 +86,7 @@ public class ingrediente extends interfazGeneral {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -98,12 +101,12 @@ public class ingrediente extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(false);
+            txtNombre.setEditable(false);
             btnActualizar.setEnabled(true);
             actualizar();
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
@@ -118,7 +121,7 @@ public class ingrediente extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -135,7 +138,7 @@ public class ingrediente extends interfazGeneral {
     protected void actualizar() {
         if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
-            String nombre = txtAtributosExtras[0].getText();
+            String nombre = txtNombre.getText();
             String estado = lblEstado.getText();
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("UPDATE ingrediente SET NOM_ING = ?, ESTADO = ? WHERE ING_ID = ?")) {
@@ -152,4 +155,22 @@ public class ingrediente extends interfazGeneral {
             }
         }
     }
+    @Override
+    protected void cancelar() {
+        txtNombre.setText("");
+        lblEstado.setText("");
+        txtCodigo.setEditable(true);
+        txtNombre.setEditable(true);
+        btnActualizar.setEnabled(false);
+        CarFlaAct = 0;
+        operation = "";
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
+        cargarDatos();
+    }
+
 }

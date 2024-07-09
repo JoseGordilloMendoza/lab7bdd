@@ -5,9 +5,18 @@ import javax.swing.*;
 
 public class cliente extends interfazGeneral {
 
+    private JTextField[] txtAtributosExtras;
+
     public cliente() {
         super("CRUD Cliente Interface", new String[]{"Nombre", "Apellido", "Dirección", "Teléfono", "Consumo P", "Consumo B", "Consumo C"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+
+        // Inicializar los JTextField para los atributos extras
+        txtAtributosExtras = new JTextField[7];
+        for (int i = 0; i < txtAtributosExtras.length; i++) {
+            txtAtributosExtras[i] = new JTextField();
+            addExtraComponent(i, txtAtributosExtras[i]);
+        }
     }
 
     @Override
@@ -30,6 +39,7 @@ public class cliente extends interfazGeneral {
                 String estado = rs.getString("ESTADO");
 
                 usedCodes.add(Integer.parseInt(id));
+                // Agregar fila al tableModel con los datos obtenidos
                 tableModel.addRow(new Object[]{id, nombre, apellido, direccion, telefono, consP, consB, consC, estado});
             }
         } catch (SQLException e) {
@@ -39,7 +49,6 @@ public class cliente extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String id = txtCodigo.getText();
         String nombre = txtAtributosExtras[0].getText();
         String apellido = txtAtributosExtras[1].getText();
         String direccion = txtAtributosExtras[2].getText();
@@ -49,28 +58,26 @@ public class cliente extends interfazGeneral {
         String consC = txtAtributosExtras[6].getText();
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(id))) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO cliente (CLI_ID, NOM_CLI, APE_CLI, DIR_CLI, TEL_CLI, CONS_P, CONS_B, CONS_C, ESTADO) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-                pstmt.setString(1, id);
-                pstmt.setString(2, nombre);
-                pstmt.setString(3, apellido);
-                pstmt.setString(4, direccion);
-                pstmt.setString(5, telefono);
-                pstmt.setString(6, consP);
-                pstmt.setString(7, consB);
-                pstmt.setString(8, consC);
-                pstmt.setString(9, estado);
-                pstmt.executeUpdate();
+        int codigo = generateNextCode("cliente", "CLI_ID");
 
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "El registro con la clave " + id + " ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO cliente (CLI_ID, NOM_CLI, APE_CLI, DIR_CLI, TEL_CLI, CONS_P, CONS_B, CONS_C, ESTADO) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
+            pstmt.setInt(1, codigo);
+            pstmt.setString(2, nombre);
+            pstmt.setString(3, apellido);
+            pstmt.setString(4, direccion);
+            pstmt.setString(5, telefono);
+            pstmt.setString(6, consP);
+            pstmt.setString(7, consB);
+            pstmt.setString(8, consC);
+            pstmt.setString(9, estado);
+            pstmt.executeUpdate();
+
+            cargarDatos();
+            cancelar();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -78,21 +85,22 @@ public class cliente extends interfazGeneral {
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 8).toString().equals("A")) {
+            // Obtener y establecer los valores en los campos correspondientes
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            txtAtributosExtras[2].setText(tableModel.getValueAt(selectedRow, 3).toString());
-            txtAtributosExtras[3].setText(tableModel.getValueAt(selectedRow, 4).toString());
-            txtAtributosExtras[4].setText(tableModel.getValueAt(selectedRow, 5).toString());
-            txtAtributosExtras[5].setText(tableModel.getValueAt(selectedRow, 6).toString());
-            txtAtributosExtras[6].setText(tableModel.getValueAt(selectedRow, 7).toString());
+            for (int i = 0; i < txtAtributosExtras.length; i++) {
+                txtAtributosExtras[i].setText(tableModel.getValueAt(selectedRow, i + 1).toString());
+            }
             lblEstado.setText(tableModel.getValueAt(selectedRow, 8).toString());
+
+            // Establecer estado de los componentes
             txtCodigo.setEditable(false);
             for (JTextField txtAtributoExtra : txtAtributosExtras) {
                 txtAtributoExtra.setEditable(true);
             }
-            CarFlaAct = 1;
+
+            // Configurar la operación de modificación
             operation = "mod";
+            CarFlaAct = 1;
             btnActualizar.setEnabled(true);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -105,15 +113,18 @@ public class cliente extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 8).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                for (int i = 0; i < txtAtributosExtras.length; i++) {
-                    txtAtributosExtras[i].setText(tableModel.getValueAt(selectedRow, i + 1).toString());
+                String codigo = tableModel.getValueAt(selectedRow, 0).toString();
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE cliente SET ESTADO = '*' WHERE CLI_ID = ?")) {
+                    pstmt.setString(1, codigo);
+                    pstmt.executeUpdate();
+
+                    cargarDatos();
+                    cancelar();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
             }
         }
     }
@@ -122,22 +133,22 @@ public class cliente extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 8).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            for (int i = 0; i < txtAtributosExtras.length; i++) {
-                txtAtributosExtras[i].setText(tableModel.getValueAt(selectedRow, i + 1).toString());
+            String codigo = tableModel.getValueAt(selectedRow, 0).toString();
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE cliente SET ESTADO = 'I' WHERE CLI_ID = ?")) {
+                pstmt.setString(1, codigo);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            for (JTextField txtAtributoExtra : txtAtributosExtras) {
-                txtAtributoExtra.setEditable(false);
-            }
-            btnActualizar.setEnabled(true);
         } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El registro ya está inactivo.", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El registro está eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -145,25 +156,29 @@ public class cliente extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 8).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            for (int i = 0; i < txtAtributosExtras.length; i++) {
-                txtAtributosExtras[i].setText(tableModel.getValueAt(selectedRow, i + 1).toString());
+            String codigo = tableModel.getValueAt(selectedRow, 0).toString();
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE cliente SET ESTADO = 'A' WHERE CLI_ID = ?")) {
+                pstmt.setString(1, codigo);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
         } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El registro ya está activo.", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "El registro está eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     @Override
     protected void actualizar() {
         if (CarFlaAct == 1) {
-            String id = txtCodigo.getText();
+            String codigo = txtCodigo.getText();
             String nombre = txtAtributosExtras[0].getText();
             String apellido = txtAtributosExtras[1].getText();
             String direccion = txtAtributosExtras[2].getText();
@@ -183,7 +198,7 @@ public class cliente extends interfazGeneral {
                 pstmt.setString(6, consB);
                 pstmt.setString(7, consC);
                 pstmt.setString(8, estado);
-                pstmt.setString(9, id);
+                pstmt.setString(9, codigo);
                 pstmt.executeUpdate();
 
                 cargarDatos();
@@ -194,4 +209,35 @@ public class cliente extends interfazGeneral {
             }
         }
     }
+    @Override
+    protected void cancelar() {
+        // Limpiar el campo de texto del código y los atributos extras
+        txtCodigo.setText("");
+        for (JTextField txtAtributoExtra : txtAtributosExtras) {
+            txtAtributoExtra.setText("");
+        }
+
+        // Restablecer el estado del label de estado
+        lblEstado.setText("");
+
+        // Habilitar/Deshabilitar campos y botones según corresponda
+        txtCodigo.setEditable(true);
+        for (JTextField txtAtributoExtra : txtAtributosExtras) {
+            txtAtributoExtra.setEditable(true);
+        }
+        btnActualizar.setEnabled(false);
+
+        // Restablecer las variables de control
+        CarFlaAct = 0;
+        operation = "";
+        
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
+        cargarDatos();
+    }
+
 }

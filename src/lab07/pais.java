@@ -6,9 +6,15 @@ import java.awt.*;
 
 public class pais extends interfazGeneral {
 
+    private JTextField txtNombre;
+
     public pais() {
         super("CRUD Pais Interface", new String[]{"Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        
+        // Crear el JTextField para el atributo "Nombre" y agregarlo al panel
+        txtNombre = new JTextField();
+        addExtraComponent(0, txtNombre);
     }
 
     @Override
@@ -34,7 +40,7 @@ public class pais extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String nombre = txtAtributosExtras[0].getText();
+        String nombre = txtNombre.getText();
         String estado = "A";
 
         if (isDuplicateName(nombre, "pais", "NOM_PAI")) {
@@ -64,10 +70,10 @@ public class pais extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(true);
+            txtNombre.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -83,7 +89,7 @@ public class pais extends interfazGeneral {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -98,12 +104,12 @@ public class pais extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(false);
+            txtNombre.setEditable(false);
             btnActualizar.setEnabled(true);
             actualizar();
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
@@ -118,7 +124,7 @@ public class pais extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -135,7 +141,7 @@ public class pais extends interfazGeneral {
     protected void actualizar() {
         if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
-            String nombre = txtAtributosExtras[0].getText();
+            String nombre = txtNombre.getText();
             String estado = lblEstado.getText();
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET NOM_PAI = ?, ESTADO = ? WHERE COD_PAI = ?")) {
@@ -152,4 +158,30 @@ public class pais extends interfazGeneral {
             }
         }
     }
+    @Override
+    protected void cancelar() {
+        // Limpiar el campo de texto del código y el campo adicional
+        txtCodigo.setText("");
+        txtNombre.setText("");
+
+        // Restablecer el estado del label de estado
+        lblEstado.setText("");
+
+        // Habilitar/Deshabilitar campos y botones según corresponda
+        txtCodigo.setEditable(true);
+        txtNombre.setEditable(true);
+        btnActualizar.setEnabled(false);
+
+        // Restablecer las variables de control
+        CarFlaAct = 0;
+        operation = "";
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
+        cargarDatos();
+    }
+
 }

@@ -5,10 +5,13 @@ import javax.swing.*;
 import java.awt.*;
 
 public class tip_art extends interfazGeneral {
+    private JTextField txtCategoria;
 
     public tip_art() {
         super("CRUD Tipo de Artículo Interface", new String[]{"Categoría"});
+        txtCategoria = new JTextField();
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        addExtraComponent(0, txtCategoria);
     }
 
     @Override
@@ -35,7 +38,7 @@ public class tip_art extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String categoria = txtAtributosExtras[0].getText();
+        String categoria = txtCategoria.getText();
         String estado = "A";
 
         if (isDuplicateName(categoria, "tipo_de_articulo", "CAT")) {
@@ -65,10 +68,10 @@ public class tip_art extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(true);
+            txtCategoria.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -84,7 +87,7 @@ public class tip_art extends interfazGeneral {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -99,12 +102,12 @@ public class tip_art extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(false);
+            txtCategoria.setEditable(false);
             btnActualizar.setEnabled(true);
             actualizar();
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
@@ -119,7 +122,7 @@ public class tip_art extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -136,7 +139,7 @@ public class tip_art extends interfazGeneral {
     protected void actualizar() {
         if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
-            String categoria = txtAtributosExtras[0].getText();
+            String categoria = txtCategoria.getText();
             String estado = lblEstado.getText();
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_articulo SET CAT = ?, ESTADO = ? WHERE COD_TIP_ART = ?")) {
@@ -153,4 +156,28 @@ public class tip_art extends interfazGeneral {
             }
         }
     }
+    @Override
+    protected void cancelar() {
+        // Limpiar los campos de texto y restablecer estado de componentes
+        txtCodigo.setText("");
+        txtCategoria.setText("");
+        lblEstado.setText("");
+
+        // Restablecer estado de edición de campos
+        txtCodigo.setEditable(true);
+        txtCategoria.setEditable(true);
+
+        // Deshabilitar botones según el estado deseado
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
+
+        // Cargar los datos nuevamente en la tabla
+        cargarDatos();
+    }
+
+    
 }

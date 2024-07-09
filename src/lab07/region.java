@@ -9,12 +9,13 @@ import java.util.Map;
 public class region extends interfazGeneral {
 
     private JComboBox<String> comboCodPai;
+    private JTextField txtNombreRegion;
     private Map<String, Integer> paisMap;
-    
 
     public region() {
         super("CRUD Región Interface", new String[]{"País", "Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        txtNombreRegion = new JTextField();
         cargarPaises();
     }
 
@@ -22,7 +23,9 @@ public class region extends interfazGeneral {
         paisMap = new HashMap<>();
         comboCodPai = new JComboBox<>();
 
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_PAI, NOM_PAI FROM pais WHERE ESTADO = 'A'")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COD_PAI, NOM_PAI FROM pais WHERE ESTADO = 'A'")) {
 
             while (rs.next()) {
                 int codPai = rs.getInt("COD_PAI");
@@ -34,21 +37,19 @@ public class region extends interfazGeneral {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboCodPai, 3);
-
-        revalidate();
-        repaint();
+        // Add the combo box and the text field to the correct panel
+        addExtraComponent(0, comboCodPai);
+        addExtraComponent(1, txtNombreRegion);
     }
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT r.COD_REGI, r.COD_PAI, r.NOM_REGI, r.ESTADO, p.NOM_PAI FROM region r JOIN pais p ON r.COD_PAI = p.COD_PAI")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT r.COD_REGI, r.COD_PAI, r.NOM_REGI, r.ESTADO, p.NOM_PAI FROM region r JOIN pais p ON r.COD_PAI = p.COD_PAI")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
-            txtCodigo.setText("" + generateNextCode("ingrediente", "ING_ID"));
             while (rs.next()) {
                 int codRegi = rs.getInt("COD_REGI");
                 int codPai = rs.getInt("COD_PAI");
@@ -79,7 +80,7 @@ public class region extends interfazGeneral {
             int codRegi = generateNextCode("region", "COD_REGI");
             String selectedItem = (String) comboCodPai.getSelectedItem();
             int codPai = Integer.parseInt(selectedItem.split(" / ")[0]);
-            String nomRegi = txtAtributosExtras[1].getText();
+            String nomRegi = txtNombreRegion.getText();
             String estado = "A";
 
             if (isDuplicateName(nomRegi, "region", "NOM_REGI")) {
@@ -88,7 +89,8 @@ public class region extends interfazGeneral {
             }
 
             if (!usedCodes.contains(codRegi)) {
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO region (COD_REGI, COD_PAI, NOM_REGI, ESTADO) VALUES (?, ?, ?, ?)")) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("INSERT INTO region (COD_REGI, COD_PAI, NOM_REGI, ESTADO) VALUES (?, ?, ?, ?)")) {
                     pstmt.setInt(1, codRegi);
                     pstmt.setInt(2, codPai);
                     pstmt.setString(3, nomRegi);
@@ -116,11 +118,11 @@ public class region extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codPai = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodPai.setSelectedItem(codPai);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNombreRegion.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 3).toString());
             txtCodigo.setEditable(false);
             comboCodPai.setEnabled(true);
-            txtAtributosExtras[1].setEditable(true);
+            txtNombreRegion.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -135,15 +137,17 @@ public class region extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codPai = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodPai.setSelectedItem(codPai);
-                txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = '*' WHERE COD_REGI = ?")) {
+                    pstmt.setInt(1, codRegi);
+                    pstmt.executeUpdate();
+
+                    cargarDatos();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -152,18 +156,17 @@ public class region extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codPai = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodPai.setSelectedItem(codPai);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodPai.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = 'I' WHERE COD_REGI = ?")) {
+                pstmt.setInt(1, codRegi);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -175,15 +178,17 @@ public class region extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codPai = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodPai.setSelectedItem(codPai);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = 'A' WHERE COD_REGI = ?")) {
+                pstmt.setInt(1, codRegi);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -198,18 +203,24 @@ public class region extends interfazGeneral {
                 int codRegi = Integer.parseInt(txtCodigo.getText());
                 String selectedItem = (String) comboCodPai.getSelectedItem();
                 int codPai = Integer.parseInt(selectedItem.split(" / ")[0]);
-                String nomRegi = txtAtributosExtras[1].getText();
+                String nomRegi = txtNombreRegion.getText();
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET COD_PAI = ?, NOM_REGI = ?, ESTADO = ? WHERE COD_REGI = ?")) {
+                if (isDuplicateName(nomRegi, "region", "NOM_REGI") && !nomRegi.equals(tableModel.getValueAt(table.getSelectedRow(), 2).toString())) {
+                    JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET COD_PAI = ?, NOM_REGI = ?, ESTADO = ? WHERE COD_REGI = ?")) {
                     pstmt.setInt(1, codPai);
                     pstmt.setString(2, nomRegi);
                     pstmt.setString(3, estado);
                     pstmt.setInt(4, codRegi);
                     pstmt.executeUpdate();
 
-                    cancelar();
                     cargarDatos();
+                    cancelar();
                 } catch (SQLException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -219,18 +230,30 @@ public class region extends interfazGeneral {
             }
         }
     }
-
     @Override
     protected void cancelar() {
+        // Limpiar los campos de texto y restablecer estado de componentes
         txtCodigo.setText("");
-        comboCodPai.setSelectedIndex(0);
-        txtAtributosExtras[1].setText("");
-        lblEstado.setText("A");
+        comboCodPai.setSelectedIndex(0); // Puedes ajustar este índice según tu lógica
+        txtNombreRegion.setText("");
+        lblEstado.setText("");
+
+        // Restablecer estado de edición de campos y botones
         txtCodigo.setEditable(true);
-        comboCodPai.setEnabled(true);
-        txtAtributosExtras[1].setEditable(true);
+        comboCodPai.setEnabled(true); // Ajustar según necesidad
+        txtNombreRegion.setEditable(true);
+        btnActualizar.setEnabled(false);
+
+        // Restablecer variables de control
         CarFlaAct = 0;
         operation = "";
+         btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
+        cargarDatos();
     }
+
 }

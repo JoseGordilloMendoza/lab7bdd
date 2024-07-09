@@ -5,14 +5,24 @@ import javax.swing.*;
 
 public class tip_reg extends interfazGeneral {
 
+    private JTextField txtCategoria;
+
     public tip_reg() {
         super("CRUD Tipo de Regalo Interface", new String[]{"Categoría"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        initializeComponents();
+    }
+
+    private void initializeComponents() {
+        txtCategoria = new JTextField(15);
+        pnlAtributosExtras[0].add(txtCategoria); // Add the JTextField to the respective panel for "Categoría"
     }
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT * FROM tipo_de_regalo")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM tipo_de_regalo")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
@@ -31,19 +41,20 @@ public class tip_reg extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String nombre = txtAtributosExtras[0].getText();
+        String categoria = txtCategoria.getText();
         String estado = "A";
 
-        if (isDuplicateName(nombre, "tipo_de_regalo", "CAT_REG")) {
+        if (isDuplicateName(categoria, "tipo_de_regalo", "CAT_REG")) {
             JOptionPane.showMessageDialog(this, "La categoría ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
         int codigo = generateNextCode("tipo_de_regalo", "COD_TIP_REG");
 
-        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO tipo_de_regalo (COD_TIP_REG, CAT_REG, ESTADO) VALUES (?, ?, ?)")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO tipo_de_regalo (COD_TIP_REG, CAT_REG, ESTADO) VALUES (?, ?, ?)")) {
             pstmt.setInt(1, codigo);
-            pstmt.setString(2, nombre);
+            pstmt.setString(2, categoria);
             pstmt.setString(3, estado);
             pstmt.executeUpdate();
 
@@ -60,10 +71,10 @@ public class tip_reg extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(true);
+            txtCategoria.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -79,7 +90,7 @@ public class tip_reg extends interfazGeneral {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -94,12 +105,12 @@ public class tip_reg extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(false);
+            txtCategoria.setEditable(false);
             btnActualizar.setEnabled(true);
             actualizar();
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
@@ -114,7 +125,7 @@ public class tip_reg extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -131,9 +142,10 @@ public class tip_reg extends interfazGeneral {
     protected void actualizar() {
         if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
-            String categoria = txtAtributosExtras[0].getText();
+            String categoria = txtCategoria.getText();
             String estado = lblEstado.getText();
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_regalo SET CAT_REG = ?, ESTADO = ? WHERE COD_TIP_REG = ?")) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_regalo SET CAT_REG = ?, ESTADO = ? WHERE COD_TIP_REG = ?")) {
                 pstmt.setString(1, categoria);
                 pstmt.setString(2, estado);
                 pstmt.setString(3, codigo);
@@ -147,4 +159,27 @@ public class tip_reg extends interfazGeneral {
             }
         }
     }
+    @Override
+    protected void cancelar() {
+        // Limpiar los campos de texto y restablecer estado de componentes
+        txtCodigo.setText("");
+        txtCategoria.setText("");
+        lblEstado.setText("");
+
+        // Restablecer estado de edición de campos
+        txtCodigo.setEditable(true);
+        txtCategoria.setEditable(true);
+
+        // Deshabilitar botones según el estado deseado
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
+
+        // Cargar los datos nuevamente en la tabla
+        cargarDatos();
+    }
+
 }

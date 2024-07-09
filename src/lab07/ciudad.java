@@ -9,6 +9,7 @@ import java.util.Map;
 public class ciudad extends interfazGeneral {
 
     private JComboBox<String> comboCodRegi;
+    private JTextField txtNomCiu;
     private Map<String, Integer> regionMap;
 
     public ciudad() {
@@ -24,7 +25,9 @@ public class ciudad extends interfazGeneral {
         // Agregar elemento predeterminado
         comboCodRegi.addItem("Seleccionar región");
 
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_REGI, NOM_REGI FROM region WHERE ESTADO = 'A'")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COD_REGI, NOM_REGI FROM region WHERE ESTADO = 'A'")) {
 
             while (rs.next()) {
                 int codRegi = rs.getInt("COD_REGI");
@@ -39,9 +42,11 @@ public class ciudad extends interfazGeneral {
         // Selección del primer elemento como predeterminado
         comboCodRegi.setSelectedIndex(0);
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboCodRegi, 3);
+        txtNomCiu = new JTextField(15);
+
+        // Usar el método addExtraComponent para agregar componentes a los paneles correspondientes
+        addExtraComponent(0, comboCodRegi);
+        addExtraComponent(1, txtNomCiu);
 
         revalidate();
         repaint();
@@ -49,7 +54,9 @@ public class ciudad extends interfazGeneral {
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT c.COD_CIU, c.COD_REGI, c.NOM_CIU, c.ESTADO, r.NOM_REGI FROM ciudad c JOIN region r ON c.COD_REGI = r.COD_REGI")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT c.COD_CIU, c.COD_REGI, c.NOM_CIU, c.ESTADO, r.NOM_REGI FROM ciudad c JOIN region r ON c.COD_REGI = r.COD_REGI")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
@@ -79,7 +86,7 @@ public class ciudad extends interfazGeneral {
 
             String selectedItem = (String) comboCodRegi.getSelectedItem();
             int codRegi = Integer.parseInt(selectedItem.split(" / ")[0]);
-            String nomCiu = txtAtributosExtras[1].getText();
+            String nomCiu = txtNomCiu.getText();
             String estado = "A";
 
             if (isDuplicateName(nomCiu, "ciudad", "NOM_CIU")) {
@@ -89,7 +96,8 @@ public class ciudad extends interfazGeneral {
 
             int codCiu = generateNextCode("ciudad", "COD_CIU");
 
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ciudad (COD_CIU, COD_REGI, NOM_CIU, ESTADO) VALUES (?, ?, ?, ?)")) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ciudad (COD_CIU, COD_REGI, NOM_CIU, ESTADO) VALUES (?, ?, ?, ?)")) {
                 pstmt.setInt(1, codCiu);
                 pstmt.setInt(2, codRegi);
                 pstmt.setString(3, nomCiu);
@@ -114,11 +122,11 @@ public class ciudad extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodRegi.setSelectedItem(codRegi);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNomCiu.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 3).toString());
             txtCodigo.setEditable(false);
             comboCodRegi.setEnabled(true);
-            txtAtributosExtras[1].setEditable(true);
+            txtNomCiu.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -136,7 +144,7 @@ public class ciudad extends interfazGeneral {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
                 String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
                 comboCodRegi.setSelectedItem(codRegi);
-                txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+                txtNomCiu.setText(tableModel.getValueAt(selectedRow, 2).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -153,13 +161,13 @@ public class ciudad extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodRegi.setSelectedItem(codRegi);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNomCiu.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
             comboCodRegi.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
+            txtNomCiu.setEditable(false);
             btnActualizar.setEnabled(true);
             actualizar();
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
@@ -176,7 +184,7 @@ public class ciudad extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodRegi.setSelectedItem(codRegi);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNomCiu.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -196,10 +204,11 @@ public class ciudad extends interfazGeneral {
                 int codCiu = Integer.parseInt(txtCodigo.getText());
                 String selectedItem = (String) comboCodRegi.getSelectedItem();
                 int codRegi = Integer.parseInt(selectedItem.split(" / ")[0]);
-                String nomCiu = txtAtributosExtras[1].getText();
+                String nomCiu = txtNomCiu.getText();
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET COD_REGI = ?, NOM_CIU = ?, ESTADO = ? WHERE COD_CIU = ?")) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET COD_REGI = ?, NOM_CIU = ?, ESTADO = ? WHERE COD_CIU = ?")) {
                     pstmt.setInt(1, codRegi);
                     pstmt.setString(2, nomCiu);
                     pstmt.setString(3, estado);
@@ -215,19 +224,33 @@ public class ciudad extends interfazGeneral {
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "Código de ciudad inválido.", "Error", JOptionPane.ERROR_MESSAGE);
             }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debes seleccionar una opción para el botón Grabar Cambios", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
     @Override
-    protected void cancelar() {
-        txtCodigo.setText("");
-        comboCodRegi.setSelectedIndex(0);
-        lblEstado.setText("A");
-        txtCodigo.setEditable(true);
-        comboCodRegi.setEnabled(true);
-        CarFlaAct = 0;
-        operation = "";
-        btnActualizar.setEnabled(false);
-    }
+        protected void cancelar() {
+            // Limpiar campos de texto
+            txtCodigo.setText("");
+            txtNomCiu.setText(""); // Limpiar el campo de nombre de la ciudad
+            comboCodRegi.setSelectedIndex(0); // Restablecer la selección del combo box
+
+            lblEstado.setText("");
+
+            // Deseleccionar cualquier fila en la tabla
+            table.clearSelection();
+
+            // Restablecer la configuración inicial de los botones y campos de texto
+            txtCodigo.setEditable(true);
+            comboCodRegi.setEnabled(true); // Habilitar el combo box
+            txtNomCiu.setEditable(true); // Habilitar el campo de nombre de la ciudad
+
+            btnAdicionar.setEnabled(true);
+            btnModificar.setEnabled(false);
+            btnEliminar.setEnabled(false);
+            btnInactivar.setEnabled(false);
+            btnReactivar.setEnabled(false);
+            btnActualizar.setEnabled(false);
+
+            cargarDatos();
+        }
+
 }

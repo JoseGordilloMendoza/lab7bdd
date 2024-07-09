@@ -21,7 +21,12 @@ public class franquicia extends interfazGeneral {
         locMap = new HashMap<>();
         comboCodLoc = new JComboBox<>();
 
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_LOC, NOM_LOC FROM localidad WHERE ESTADO = 'A'")) {
+        // Agregar elemento predeterminado
+        comboCodLoc.addItem("Seleccionar localidad");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COD_LOC, NOM_LOC FROM localidad WHERE ESTADO = 'A'")) {
 
             while (rs.next()) {
                 int codLoc = rs.getInt("COD_LOC");
@@ -33,9 +38,11 @@ public class franquicia extends interfazGeneral {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboCodLoc, 3);
+        // Selección del primer elemento como predeterminado
+        comboCodLoc.setSelectedIndex(0);
+
+        // Usar el método addExtraComponent para agregar componentes a los paneles correspondientes
+        addExtraComponent(0, comboCodLoc);
 
         revalidate();
         repaint();
@@ -43,7 +50,9 @@ public class franquicia extends interfazGeneral {
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT f.COD_FRAN, f.COD_LOC, f.ESTADO, l.NOM_LOC FROM franquicia f JOIN localidad l ON f.COD_LOC = l.COD_LOC")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT f.COD_FRAN, f.COD_LOC, f.ESTADO, l.NOM_LOC FROM franquicia f JOIN localidad l ON f.COD_LOC = l.COD_LOC")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
@@ -61,29 +70,16 @@ public class franquicia extends interfazGeneral {
         }
     }
 
-    private String getLocNameById(int codLoc) {
-        for (Map.Entry<String, Integer> entry : locMap.entrySet()) {
-            if (entry.getValue() == codLoc) {
-                return entry.getKey();
-            }
-        }
-        return "";
-    }
-
     @Override
     protected void adicionar() {
         try {
-            int codFran = Integer.parseInt(txtCodigo.getText());
+            int codFran = generateNextCode("franquicia", "COD_FRAN");
             String selectedItem = (String) comboCodLoc.getSelectedItem();
             int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
             String estado = "A";
 
-            if (usedCodes.contains(codFran)) {
-                JOptionPane.showMessageDialog(this, "El código de franquicia ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO franquicia (COD_FRAN, COD_LOC, ESTADO) VALUES (?, ?, ?)")) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO franquicia (COD_FRAN, COD_LOC, ESTADO) VALUES (?, ?, ?)")) {
                 pstmt.setInt(1, codFran);
                 pstmt.setInt(2, codLoc);
                 pstmt.setString(3, estado);
@@ -185,7 +181,8 @@ public class franquicia extends interfazGeneral {
                 int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE franquicia SET COD_LOC = ?, ESTADO = ? WHERE COD_FRAN = ?")) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE franquicia SET COD_LOC = ?, ESTADO = ? WHERE COD_FRAN = ?")) {
                     pstmt.setInt(1, codLoc);
                     pstmt.setString(2, estado);
                     pstmt.setInt(3, codFran);
@@ -207,7 +204,7 @@ public class franquicia extends interfazGeneral {
     protected void cancelar() {
         txtCodigo.setText("");
         comboCodLoc.setSelectedIndex(0);
-        lblEstado.setText("A");
+        lblEstado.setText("");
         txtCodigo.setEditable(true);
         comboCodLoc.setEnabled(true);
         CarFlaAct = 0;

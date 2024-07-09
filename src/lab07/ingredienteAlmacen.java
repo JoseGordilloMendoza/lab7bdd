@@ -10,37 +10,38 @@ public class ingredienteAlmacen extends interfazGeneral {
 
     private JComboBox<String> comboCodIng;
     private JComboBox<String> comboCodAlm;
+    private JTextField txtStoAct;
+    private JTextField txtStoMin;
+    private JTextField txtStoMax;
+    private JTextField txtStoSeg;
     private Map<String, Integer> ingredienteMap;
     private Map<String, Integer> almacenMap;
 
     public ingredienteAlmacen() {
-        super("CRUD Ingrediente Almacen Interface", new String[]{"Ingrediente", "Almacen", "Stock Actual", "Stock Mínimo", "Stock Máximo", "Stock Seguridad"});
+        super("CRUD Ingrediente Almacen Interface", new String[]{"Stock Actual", "Stock Mínimo", "Stock Máximo", "Stock Seguridad", "Ingrediente", "Almacen"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarIngredientes();
         cargarAlmacenes();
-    }
-
-    public ingredienteAlmacen(String title, String[] columnNames) {
-        super(title, columnNames);
-        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        inicializarComponentes();
     }
 
     private void cargarIngredientes() {
         ingredienteMap = new HashMap<>();
         comboCodIng = new JComboBox<>();
 
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT ING_ID FROM ingrediente WHERE ESTADO = 'A'")) {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT ING_ID, NOM_ING FROM ingrediente WHERE ESTADO = 'A'")) {
             while (rs.next()) {
-                String codIng = rs.getString("ING_ID");
-                comboCodIng.addItem(codIng);
+                int ingId = rs.getInt("ING_ID");
+                String nombre = rs.getString("NOM_ING");
+                String item = ingId + " / " + nombre;
+                ingredienteMap.put(item, ingId);
+                comboCodIng.addItem(item);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboCodIng, 3);
+        addExtraComponent(4, comboCodIng);
 
         revalidate();
         repaint();
@@ -52,37 +53,48 @@ public class ingredienteAlmacen extends interfazGeneral {
 
         try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_ALM FROM almacen WHERE ESTADO = 'A'")) {
             while (rs.next()) {
-                String codAlm = rs.getString("COD_ALM");
-                comboCodAlm.addItem(codAlm);
+                int codAlm = rs.getInt("COD_ALM");
+                almacenMap.put(String.valueOf(codAlm), codAlm);
+                comboCodAlm.addItem(String.valueOf(codAlm));
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[1]);
-        dataPanel.add(comboCodAlm, 5);
+        addExtraComponent(5, comboCodAlm);
 
         revalidate();
         repaint();
     }
 
+    private void inicializarComponentes() {
+        txtStoAct = new JTextField(10);
+        txtStoMin = new JTextField(10);
+        txtStoMax = new JTextField(10);
+        txtStoSeg = new JTextField(10);
+
+        addExtraComponent(0, txtStoAct);
+        addExtraComponent(1, txtStoMin);
+        addExtraComponent(2, txtStoMax);
+        addExtraComponent(3, txtStoSeg);
+    }
+
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT ia.ING_ID, ia.COD_ALM, ia.STO_ACT, ia.STO_MIN, ia.STO_MAX, ia.STO_SEG, ia.ESTADO FROM ingrediente_almacen ia")) {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT STO_ACT, STO_MIN, STO_MAX, STO_SEG, ING_ID, COD_ALM, ESTADO FROM ingrediente_almacen")) {
             tableModel.setRowCount(0);
             usedCodes.clear();
             while (rs.next()) {
+                long stoAct = rs.getLong("STO_ACT");
+                long stoMin = rs.getLong("STO_MIN");
+                long stoMax = rs.getLong("STO_MAX");
+                long stoSeg = rs.getLong("STO_SEG");
                 int ingId = rs.getInt("ING_ID");
                 int codAlm = rs.getInt("COD_ALM");
-                double stoAct = rs.getDouble("STO_ACT");
-                double stoMin = rs.getDouble("STO_MIN");
-                double stoMax = rs.getDouble("STO_MAX");
-                double stoSeg = rs.getDouble("STO_SEG");
                 String estado = rs.getString("ESTADO");
 
                 usedCodes.add(ingId);
-                tableModel.addRow(new Object[]{ingId, codAlm, stoAct, stoMin, stoMax, stoSeg, estado});
+                tableModel.addRow(new Object[]{stoAct, stoMin, stoMax, stoSeg, ingId, codAlm, estado});
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -90,150 +102,159 @@ public class ingredienteAlmacen extends interfazGeneral {
     }
 
     @Override
-    protected void adicionar() {
-        try {
-            String codIng = (String) comboCodIng.getSelectedItem();
-            String codAlm = (String) comboCodAlm.getSelectedItem();
-            double stoAct = Double.parseDouble(txtAtributosExtras[0].getText());
-            double stoMin = Double.parseDouble(txtAtributosExtras[1].getText());
-            double stoMax = Double.parseDouble(txtAtributosExtras[2].getText());
-            double stoSeg = Double.parseDouble(txtAtributosExtras[3].getText());
-            String estado = "A";
+protected void adicionar() {
+    try {
+        int ingId = Integer.parseInt(txtCodigo.getText());  // Obtener el ID de ingrediente desde txtCodigo
+        int codAlm = Integer.parseInt((String) comboCodAlm.getSelectedItem());  // Obtener el código de almacén desde comboCodAlm
+        long stoAct = Long.parseLong(txtStoAct.getText());
+        long stoMin = Long.parseLong(txtStoMin.getText());
+        long stoMax = Long.parseLong(txtStoMax.getText());
+        long stoSeg = Long.parseLong(txtStoSeg.getText());
+        String estado = "A";
 
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ingrediente_almacen (ING_ID, COD_ALM, STO_ACT, STO_MIN, STO_MAX, STO_SEG, ESTADO) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
-                pstmt.setString(1, codIng);
-                pstmt.setString(2, codAlm);
-                pstmt.setDouble(3, stoAct);
-                pstmt.setDouble(4, stoMin);
-                pstmt.setDouble(5, stoMax);
-                pstmt.setDouble(6, stoSeg);
-                pstmt.setString(7, estado);
-                pstmt.executeUpdate();
+        try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ingrediente_almacen (STO_ACT, STO_MIN, STO_MAX, STO_SEG, ING_ID, COD_ALM, ESTADO) VALUES (?, ?, ?, ?, ?, ?, ?)")) {
+            pstmt.setLong(1, stoAct);
+            pstmt.setLong(2, stoMin);
+            pstmt.setLong(3, stoMax);
+            pstmt.setLong(4, stoSeg);
+            pstmt.setInt(5, ingId);
+            pstmt.setInt(6, codAlm);
+            pstmt.setString(7, estado);
+            pstmt.executeUpdate();
 
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Stock actual, mínimo, máximo o de seguridad inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+            cargarDatos();
+            cancelar();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(this, "Stock actual, mínimo, máximo o de seguridad inválido.", "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
 
-    @Override
-    protected void modificar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codIng = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodIng.setSelectedItem(codIng);
-            comboCodAlm.setSelectedItem(tableModel.getValueAt(selectedRow, 2).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 3).toString());
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 4).toString());
-            txtAtributosExtras[2].setText(tableModel.getValueAt(selectedRow, 5).toString());
-            txtAtributosExtras[3].setText(tableModel.getValueAt(selectedRow, 6).toString());
-            lblEstado.setText(tableModel.getValueAt(selectedRow, 7).toString());
-            txtCodigo.setEditable(false);
-            comboCodIng.setEnabled(true);
-            comboCodAlm.setEnabled(true);
-            CarFlaAct = 1;
+@Override
+protected void modificar() {
+    int selectedRow = table.getSelectedRow();
+    if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("A")) {
+        txtStoAct.setText(tableModel.getValueAt(selectedRow, 0).toString());
+        txtStoMin.setText(tableModel.getValueAt(selectedRow, 1).toString());
+        txtStoMax.setText(tableModel.getValueAt(selectedRow, 2).toString());
+        txtStoSeg.setText(tableModel.getValueAt(selectedRow, 3).toString());
+        int ingId = (int) tableModel.getValueAt(selectedRow, 4);
+        txtCodigo.setText(String.valueOf(ingId));  // Establecer el ID de ingrediente en txtCodigo
+        comboCodAlm.setSelectedItem(tableModel.getValueAt(selectedRow, 5).toString());
+        lblEstado.setText(tableModel.getValueAt(selectedRow, 6).toString());
+        txtCodigo.setEditable(false);
+        comboCodIng.setEnabled(true);
+        comboCodAlm.setEnabled(true);
+        CarFlaAct = 1;
+        operation = "mod";
+        btnActualizar.setEnabled(true);
+    } else {
+        JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+@Override
+protected void eliminar() {
+    int selectedRow = table.getSelectedRow();
+    if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 6).toString().equals("*")) {
+        int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+        if (confirmacion == JOptionPane.YES_OPTION) {
+            int ingId = (int) tableModel.getValueAt(selectedRow, 4);
+            txtCodigo.setText(String.valueOf(ingId));  // Establecer el ID de ingrediente en txtCodigo
+            lblEstado.setText("*");
             operation = "mod";
-            btnActualizar.setEnabled(true);
-        } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 7).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codIng = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodIng.setSelectedItem(codIng);
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 7).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codIng = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodIng.setSelectedItem(codIng);
-            lblEstado.setText("I");
             CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodIng.setEnabled(false);
-            comboCodAlm.setEnabled(false);
             btnActualizar.setEnabled(true);
             actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 7).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 7).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+}
 
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 7).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codIng = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodIng.setSelectedItem(codIng);
-            comboCodAlm.setSelectedItem(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 7).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 7).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
+@Override
+protected void inactivar() {
+    int selectedRow = table.getSelectedRow();
+    if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("A")) {
+        txtStoAct.setText(tableModel.getValueAt(selectedRow, 0).toString());
+        int ingId = (int) tableModel.getValueAt(selectedRow, 4);
+        txtCodigo.setText(String.valueOf(ingId));  // Establecer el ID de ingrediente en txtCodigo
+        comboCodAlm.setSelectedItem(tableModel.getValueAt(selectedRow, 5).toString());
+        lblEstado.setText("I");
+        CarFlaAct = 1;
+        operation = "mod";
+        txtCodigo.setEditable(false);
+        comboCodIng.setEnabled(false);
+        comboCodAlm.setEnabled(false);
+        btnActualizar.setEnabled(true);
+        actualizar();
+    } else if (tableModel.getValueAt(selectedRow, 6).toString().equals("I")) {
+        JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
+    } else if (tableModel.getValueAt(selectedRow, 6).toString().equals("*")) {
+        JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
 
-    @Override
-    protected void actualizar() {
-        if (CarFlaAct == 1) {
-            if (operation.equals("add")) {
-                adicionar();
-            } else {
-                if (operation.equals("mod")) {
-                    modificar();
+@Override
+protected void reactivar() {
+    int selectedRow = table.getSelectedRow();
+    if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("I")) {
+        txtStoAct.setText(tableModel.getValueAt(selectedRow, 0).toString());
+        int ingId = (int) tableModel.getValueAt(selectedRow, 4);
+        txtCodigo.setText(String.valueOf(ingId));  // Establecer el ID de ingrediente en txtCodigo
+        comboCodAlm.setSelectedItem(tableModel.getValueAt(selectedRow, 5).toString());
+        lblEstado.setText("A");
+        CarFlaAct = 1;
+        operation = "mod";
+        btnActualizar.setEnabled(true);
+        actualizar();
+    } else if (tableModel.getValueAt(selectedRow, 6).toString().equals("A")) {
+        JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
+    } else if (tableModel.getValueAt(selectedRow, 6).toString().equals("*")) {
+        JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
+
+@Override
+protected void actualizar() {
+    if (CarFlaAct == 1) {
+        if (operation.equals("add")) {
+            adicionar();
+        } else if (operation.equals("mod")) {
+            try {
+                int ingId = Integer.parseInt(txtCodigo.getText());  // Obtener el ID de ingrediente desde txtCodigo
+                int codAlm = Integer.parseInt((String) comboCodAlm.getSelectedItem());  // Obtener el código de almacén desde comboCodAlm
+                long stoAct = Long.parseLong(txtStoAct.getText());
+                long stoMin = Long.parseLong(txtStoMin.getText());
+                long stoMax = Long.parseLong(txtStoMax.getText());
+                long stoSeg = Long.parseLong(txtStoSeg.getText());
+                String estado = lblEstado.getText();
+
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE ingrediente_almacen SET STO_ACT = ?, STO_MIN = ?, STO_MAX = ?, STO_SEG = ?, ESTADO = ? WHERE ING_ID = ? AND COD_ALM = ?")) {
+                    pstmt.setLong(1, stoAct);
+                    pstmt.setLong(2, stoMin);
+                    pstmt.setLong(3, stoMax);
+                    pstmt.setLong(4, stoSeg);
+                    pstmt.setString(5, estado);
+                    pstmt.setInt(6, ingId);
+                    pstmt.setInt(7, codAlm);
+                    pstmt.executeUpdate();
+
+                    cargarDatos();
+                    cancelar();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Stock actual, mínimo, máximo o de seguridad inválido.", "Error", JOptionPane.ERROR_MESSAGE);
             }
-            CarFlaAct = 0;
-            txtCodigo.setText("");
-            for (JTextField txtAtributoExtra : txtAtributosExtras) {
-                txtAtributoExtra.setText("");
-            }
-            lblEstado.setText("");
-            table.clearSelection();
-            txtCodigo.setEditable(true);
-            for (JTextField txtAtributoExtra : txtAtributosExtras) {
-                txtAtributoExtra.setEditable(true);
-            }
-            btnAdicionar.setEnabled(true);
-            btnModificar.setEnabled(false);
-            btnEliminar.setEnabled(false);
-            btnInactivar.setEnabled(false);
-            btnReactivar.setEnabled(false);
-            btnActualizar.setEnabled(false);
         }
+        CarFlaAct = 0;
+        cancelar();
     }
+}
 
     @Override
     protected void cancelar() {
@@ -242,5 +263,9 @@ public class ingredienteAlmacen extends interfazGeneral {
         operation = "";
         comboCodIng.setSelectedIndex(-1);
         comboCodAlm.setSelectedIndex(-1);
+        txtStoAct.setText("");
+        txtStoMin.setText("");
+        txtStoMax.setText("");
+        txtStoSeg.setText("");
     }
 }

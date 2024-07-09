@@ -20,29 +20,30 @@ public abstract class interfazGeneral extends JFrame {
     protected PreparedStatement pstmt1;
     protected String operation = "";
     protected HashSet<Integer> usedCodes = new HashSet<>();
-    protected JTextField[] txtAtributosExtras;
+    protected JPanel[] pnlAtributosExtras;
     protected JLabel[] lblAtributosExtras;
-
+    protected JPanel dataPanel;
+    
     // Fuente global para toda la interfaz
     protected static final Font DEFAULT_FONT = new Font("Oswald", Font.BOLD, 14);
 
     public interfazGeneral(String title, String[] attributeNames) {
         setTitle(title);
         setLayout(new BorderLayout());
-        JPanel dataPanel = new JPanel(new GridLayout(2 + attributeNames.length, 2));
+        dataPanel = new JPanel(new GridLayout(2 + attributeNames.length, 2));
         dataPanel.add(new JLabel("Código:"));
         txtCodigo = new JTextField("");
         dataPanel.add(txtCodigo);
         txtCodigo.setEditable(true);
 
         // tamaño dinamico
-        txtAtributosExtras = new JTextField[attributeNames.length];
+        pnlAtributosExtras = new JPanel[attributeNames.length];
         lblAtributosExtras = new JLabel[attributeNames.length];
         for (int i = 0; i < attributeNames.length; i++) {
             lblAtributosExtras[i] = new JLabel(attributeNames[i] + ":");
-            txtAtributosExtras[i] = new JTextField();
+            pnlAtributosExtras[i] = new JPanel(new BorderLayout());
             dataPanel.add(lblAtributosExtras[i]);
-            dataPanel.add(txtAtributosExtras[i]);
+            dataPanel.add(pnlAtributosExtras[i]);
         }
 
         dataPanel.add(new JLabel("Estado:"));
@@ -76,8 +77,14 @@ public abstract class interfazGeneral extends JFrame {
             columnNames[i] = attributeNames[i - 1];
         }
         columnNames[attributeNames.length + 1] = "Estado";
-        tableModel = new DefaultTableModel(columnNames, 0);
+        tableModel = new DefaultTableModel(columnNames, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false; // Hace que todas las celdas no sean editables
+            }
+        };
         table = new JTable(tableModel);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Permite selección de una sola fila
         add(new JScrollPane(table), BorderLayout.CENTER);
 
         // Configurar la fuente global
@@ -162,6 +169,16 @@ public abstract class interfazGeneral extends JFrame {
         UIManager.put("Tree.font", f);
     }
 
+    // Método para agregar un componente extra
+    public void addExtraComponent(int index, JComponent component) {
+        if (index >= 0 && index < pnlAtributosExtras.length) {
+            pnlAtributosExtras[index].removeAll();
+            pnlAtributosExtras[index].add(component, BorderLayout.CENTER);
+            pnlAtributosExtras[index].revalidate();
+            pnlAtributosExtras[index].repaint();
+        }
+    }
+
     protected abstract void cargarDatos();
 
     protected abstract void adicionar();
@@ -179,8 +196,10 @@ public abstract class interfazGeneral extends JFrame {
     protected void cancelar() {
         // Limpiar campos de texto
         txtCodigo.setText("");
-        for (JTextField txtAtributoExtra : txtAtributosExtras) {
-            txtAtributoExtra.setText("");
+        for (JPanel pnlAtributoExtra : pnlAtributosExtras) {
+            pnlAtributoExtra.removeAll();
+            pnlAtributoExtra.revalidate();
+            pnlAtributoExtra.repaint();
         }
         lblEstado.setText("");
 
@@ -188,9 +207,9 @@ public abstract class interfazGeneral extends JFrame {
         table.clearSelection();
 
         // Restablecer la configuración inicial de los botones y campos de texto
-        txtCodigo.setEditable(false);
-        for (JTextField txtAtributoExtra : txtAtributosExtras) {
-            txtAtributoExtra.setEditable(true);
+        txtCodigo.setEditable(true);
+        for (JPanel pnlAtributoExtra : pnlAtributosExtras) {
+            pnlAtributoExtra.setEnabled(true);
         }
 
         btnAdicionar.setEnabled(true);
@@ -214,7 +233,7 @@ public abstract class interfazGeneral extends JFrame {
             String estado = table.getModel().getValueAt(row, table.getColumnCount() - 1).toString();
             Color colorPaEliminado = new Color(255, 118, 89);
             if (estado.equals("A")) {
-                c.setBackground(Color.GREEN);
+                c.setBackground(new Color(107, 255, 105));
             } else if (estado.equals("I")) {
                 c.setBackground(Color.YELLOW);
             } else if (estado.equals("*")) {

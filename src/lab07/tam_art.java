@@ -5,9 +5,14 @@ import java.sql.*;
 
 public class tam_art extends interfazGeneral {
 
+    private JTextField txtNombre;
+
     public tam_art() {
         super("CRUD TAMAÑO ARTICULOS Interface", new String[]{"Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+
+        txtNombre = new JTextField();
+        addExtraComponent(0, txtNombre);
     }
 
     @Override
@@ -34,7 +39,7 @@ public class tam_art extends interfazGeneral {
     @Override
     protected void adicionar() {
         String codigo = txtCodigo.getText();
-        String nombre = txtAtributosExtras[0].getText(); // "Nombre" es el primer (y único) atributo adicional
+        String nombre = txtNombre.getText();
         String estado = "A";
 
         if (!usedCodes.contains(Integer.parseInt(codigo))) {
@@ -47,7 +52,7 @@ public class tam_art extends interfazGeneral {
 
                 cargarDatos();
                 txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
+                txtNombre.setText("");
                 lblEstado.setText("");
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -63,9 +68,9 @@ public class tam_art extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
-            txtAtributosExtras[0].setEditable(true);
+            txtNombre.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -82,7 +87,7 @@ public class tam_art extends interfazGeneral {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -97,12 +102,12 @@ public class tam_art extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(false);
+            txtNombre.setEditable(false);
             btnActualizar.setEnabled(true);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
@@ -116,7 +121,7 @@ public class tam_art extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -132,7 +137,7 @@ public class tam_art extends interfazGeneral {
     protected void actualizar() {
         if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
-            String nombre = txtAtributosExtras[0].getText();
+            String nombre = txtNombre.getText();
             String estado = lblEstado.getText();
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("UPDATE tamaño_del_articulo SET TAM = ?, ESTADO = ? WHERE COD_TAM_ART = ?")) {
@@ -143,10 +148,11 @@ public class tam_art extends interfazGeneral {
 
                 cargarDatos();
                 txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
+                txtNombre.setText("");
                 lblEstado.setText("");
                 txtCodigo.setEditable(true);
-                txtAtributosExtras[0].setEditable(true);
+                txtCodigo.setEnabled(true);
+                txtNombre.setEditable(true);
                 btnActualizar.setEnabled(false);
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -154,4 +160,27 @@ public class tam_art extends interfazGeneral {
             }
         }
     }
+    @Override
+    protected void cancelar() {
+        // Limpiar los campos de texto y restablecer estado de componentes
+        txtCodigo.setText("");
+        txtNombre.setText("");
+        lblEstado.setText("");
+
+        // Restablecer estado de edición de campos y botones
+        txtCodigo.setEditable(true);
+        txtNombre.setEditable(true);
+
+        // Deshabilitar botones de operación según el estado deseado
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
+
+        // Cargar los datos nuevamente en la tabla
+        cargarDatos();
+    }
+
 }

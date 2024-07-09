@@ -17,27 +17,36 @@ public class almacen extends interfazGeneral {
         cargarFranquicias();
     }
 
-    public almacen(String title, String[] columnNames) {
-        super(title, columnNames);
-        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
-    }
-
     private void cargarFranquicias() {
         franquiciaMap = new HashMap<>();
         comboCodFran = new JComboBox<>();
 
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_FRAN FROM franquicia WHERE ESTADO = 'A'")) {
+        // Agregar elemento predeterminado
+        comboCodFran.addItem("Seleccionar franquicia");
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT f.COD_FRAN, l.NOM_LOC " +
+                             "FROM franquicia f " +
+                             "JOIN localidad l ON f.COD_LOC = l.COD_LOC " +
+                             "WHERE f.ESTADO = 'A'")) {
             while (rs.next()) {
-                String codFran = rs.getString("COD_FRAN");
-                comboCodFran.addItem(codFran);
+                int codFran = rs.getInt("COD_FRAN");
+                String nomLoc = rs.getString("NOM_LOC");
+                String item = codFran + " loc " + nomLoc;
+                franquiciaMap.put(item, codFran);
+                comboCodFran.addItem(item);
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboCodFran, 3);
+        // Selección del primer elemento como predeterminado
+        comboCodFran.setSelectedIndex(0);
+
+        // Usar el método addExtraComponent para agregar componentes a los paneles correspondientes
+        addExtraComponent(0, comboCodFran);
 
         revalidate();
         repaint();
@@ -45,16 +54,23 @@ public class almacen extends interfazGeneral {
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT a.COD_ALM, a.COD_FRAN, a.ESTADO FROM almacen a")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(
+                     "SELECT a.COD_ALM, f.COD_FRAN, l.NOM_LOC, a.ESTADO " +
+                             "FROM almacen a " +
+                             "JOIN franquicia f ON a.COD_FRAN = f.COD_FRAN " +
+                             "JOIN localidad l ON f.COD_LOC = l.COD_LOC")) {
             tableModel.setRowCount(0);
             usedCodes.clear();
             while (rs.next()) {
                 int codAlm = rs.getInt("COD_ALM");
                 int codFran = rs.getInt("COD_FRAN");
+                String nomLoc = rs.getString("NOM_LOC");
                 String estado = rs.getString("ESTADO");
 
                 usedCodes.add(codAlm);
-                tableModel.addRow(new Object[]{codAlm, codFran, estado});
+                tableModel.addRow(new Object[]{codAlm, codFran + " loc " + nomLoc, estado});
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -64,14 +80,22 @@ public class almacen extends interfazGeneral {
     @Override
     protected void adicionar() {
         try {
-            String codFran = (String) comboCodFran.getSelectedItem();
+            // Validación para asegurar que haya un elemento seleccionado
+            if (comboCodFran.getSelectedIndex() <= 0) {
+                JOptionPane.showMessageDialog(this, "Selecciona una franquicia válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String selectedItem = (String) comboCodFran.getSelectedItem();
+            int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
             String estado = "A";
 
             int nuevoCodAlm = generateNextCode("almacen", "COD_ALM");
 
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO almacen (COD_ALM, COD_FRAN, ESTADO) VALUES (?, ?, ?)")) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO almacen (COD_ALM, COD_FRAN, ESTADO) VALUES (?, ?, ?)")) {
                 pstmt.setInt(1, nuevoCodAlm);
-                pstmt.setString(2, codFran);
+                pstmt.setInt(2, codFran);
                 pstmt.setString(3, estado);
                 pstmt.executeUpdate();
 
@@ -82,7 +106,7 @@ public class almacen extends interfazGeneral {
                 JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Código de franquicia inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -167,11 +191,13 @@ public class almacen extends interfazGeneral {
         if (CarFlaAct == 1) {
             try {
                 int codAlm = Integer.parseInt(txtCodigo.getText());
-                String codFran = (String) comboCodFran.getSelectedItem();
+                String selectedItem = (String) comboCodFran.getSelectedItem();
+                int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET COD_FRAN = ?, ESTADO = ? WHERE COD_ALM = ?")) {
-                    pstmt.setString(1, codFran);
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET COD_FRAN = ?, ESTADO = ? WHERE COD_ALM = ?")) {
+                    pstmt.setInt(1, codFran);
                     pstmt.setString(2, estado);
                     pstmt.setInt(3, codAlm);
                     pstmt.executeUpdate();
@@ -190,13 +216,13 @@ public class almacen extends interfazGeneral {
 
     @Override
     protected void cancelar() {
+        // Limpiar campos de texto
         txtCodigo.setText("");
-        comboCodFran.setSelectedIndex(0);
-        lblEstado.setText("A");
+        comboCodFran.setSelectedIndex(0); // Restablecer la selección del combo box
+        lblEstado.setText("");
         txtCodigo.setEditable(true);
         comboCodFran.setEnabled(true);
         CarFlaAct = 0;
-        operation = "";
         btnActualizar.setEnabled(false);
     }
 }

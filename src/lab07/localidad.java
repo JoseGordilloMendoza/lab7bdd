@@ -9,6 +9,7 @@ import java.util.Map;
 public class localidad extends interfazGeneral {
 
     private JComboBox<String> comboCodCiu;
+    private JTextField txtNomLoc;
     private Map<String, Integer> ciudadMap;
 
     public localidad() {
@@ -20,8 +21,11 @@ public class localidad extends interfazGeneral {
     private void cargarCiudades() {
         ciudadMap = new HashMap<>();
         comboCodCiu = new JComboBox<>();
+        comboCodCiu.addItem("Seleccionar ciudad");
 
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_CIU, NOM_CIU FROM ciudad WHERE ESTADO = 'A'")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COD_CIU, NOM_CIU FROM ciudad WHERE ESTADO = 'A'")) {
 
             while (rs.next()) {
                 int codCiu = rs.getInt("COD_CIU");
@@ -33,9 +37,11 @@ public class localidad extends interfazGeneral {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboCodCiu, 3);
+        comboCodCiu.setSelectedIndex(0);
+
+        txtNomLoc = new JTextField(15);
+        addExtraComponent(0, comboCodCiu);
+        addExtraComponent(1, txtNomLoc);
 
         revalidate();
         repaint();
@@ -43,7 +49,9 @@ public class localidad extends interfazGeneral {
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT l.COD_LOC, l.COD_CIU, l.NOM_LOC, l.ESTADO, c.NOM_CIU FROM localidad l JOIN ciudad c ON l.COD_CIU = c.COD_CIU")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT l.COD_LOC, l.COD_CIU, l.NOM_LOC, l.ESTADO, c.NOM_CIU FROM localidad l JOIN ciudad c ON l.COD_CIU = c.COD_CIU")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
@@ -62,21 +70,17 @@ public class localidad extends interfazGeneral {
         }
     }
 
-    private String getCiudadNameById(int codCiu) {
-        for (Map.Entry<String, Integer> entry : ciudadMap.entrySet()) {
-            if (entry.getValue() == codCiu) {
-                return entry.getKey();
-            }
-        }
-        return "";
-    }
-
     @Override
     protected void adicionar() {
         try {
+            if (comboCodCiu.getSelectedIndex() <= 0) {
+                JOptionPane.showMessageDialog(this, "Selecciona una ciudad válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             String selectedItem = (String) comboCodCiu.getSelectedItem();
             int codCiu = Integer.parseInt(selectedItem.split(" / ")[0]);
-            String nomLoc = txtAtributosExtras[1].getText();
+            String nomLoc = txtNomLoc.getText();
             String estado = "A";
 
             if (isDuplicateName(nomLoc, "localidad", "NOM_LOC")) {
@@ -84,10 +88,10 @@ public class localidad extends interfazGeneral {
                 return;
             }
 
-            // Generar el próximo código disponible
             int codLoc = generateNextCode("localidad", "COD_LOC");
 
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO localidad (COD_LOC, COD_CIU, NOM_LOC, ESTADO) VALUES (?, ?, ?, ?)")) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO localidad (COD_LOC, COD_CIU, NOM_LOC, ESTADO) VALUES (?, ?, ?, ?)")) {
                 pstmt.setInt(1, codLoc);
                 pstmt.setInt(2, codCiu);
                 pstmt.setString(3, nomLoc);
@@ -112,11 +116,11 @@ public class localidad extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodCiu.setSelectedItem(codCiu);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNomLoc.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 3).toString());
             txtCodigo.setEditable(false);
             comboCodCiu.setEnabled(true);
-            txtAtributosExtras[1].setEditable(true);
+            txtNomLoc.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -134,7 +138,7 @@ public class localidad extends interfazGeneral {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
                 String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
                 comboCodCiu.setSelectedItem(codCiu);
-                txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+                txtNomLoc.setText(tableModel.getValueAt(selectedRow, 2).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -151,13 +155,13 @@ public class localidad extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodCiu.setSelectedItem(codCiu);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNomLoc.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
             comboCodCiu.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
+            txtNomLoc.setEditable(false);
             btnActualizar.setEnabled(true);
             actualizar();
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
@@ -174,7 +178,7 @@ public class localidad extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodCiu.setSelectedItem(codCiu);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtNomLoc.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -194,18 +198,19 @@ public class localidad extends interfazGeneral {
                 int codLoc = Integer.parseInt(txtCodigo.getText());
                 String selectedItem = (String) comboCodCiu.getSelectedItem();
                 int codCiu = Integer.parseInt(selectedItem.split(" / ")[0]);
-                String nomLoc = txtAtributosExtras[1].getText();
+                String nomLoc = txtNomLoc.getText();
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET COD_CIU = ?, NOM_LOC = ?, ESTADO = ? WHERE COD_LOC = ?")) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET COD_CIU = ?, NOM_LOC = ?, ESTADO = ? WHERE COD_LOC = ?")) {
                     pstmt.setInt(1, codCiu);
                     pstmt.setString(2, nomLoc);
                     pstmt.setString(3, estado);
                     pstmt.setInt(4, codLoc);
                     pstmt.executeUpdate();
 
-                    cancelar();
                     cargarDatos();
+                    cancelar();
                 } catch (SQLException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -218,15 +223,25 @@ public class localidad extends interfazGeneral {
 
     @Override
     protected void cancelar() {
-        txtCodigo.setText("");
+        
         comboCodCiu.setSelectedIndex(0);
-        txtAtributosExtras[1].setText("");
-        lblEstado.setText("A");
-        txtCodigo.setEditable(true);
+        txtNomLoc.setText("");
         comboCodCiu.setEnabled(true);
-        txtAtributosExtras[1].setEditable(true);
-        CarFlaAct = 0;
-        operation = "";
+        txtNomLoc.setEditable(true);
+        txtCodigo.setText("");
+        txtCodigo.setEditable(true);
+        
+        lblEstado.setText("");
+
+            // Deseleccionar cualquier fila en la tabla
+        table.clearSelection();
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
+
+            cargarDatos();
     }
 }

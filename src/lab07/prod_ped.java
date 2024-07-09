@@ -5,8 +5,17 @@ import java.sql.*;
 
 public class prod_ped extends interfazGeneral {
 
+    private JTextField txtTipo;
+
     public prod_ped() {
         super("CRUD PROCEDENCIA DE PEDIDOS Interface", new String[]{"Tipo"});
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        initializeComponents();
+    }
+
+    private void initializeComponents() {
+        txtTipo = new JTextField(15);
+        pnlAtributosExtras[0].add(txtTipo); // Add the JTextField to the respective panel for "Tipo"
     }
 
     @Override
@@ -33,7 +42,7 @@ public class prod_ped extends interfazGeneral {
     @Override
     protected void adicionar() {
         String codigo = txtCodigo.getText();
-        String tipo = txtAtributosExtras[0].getText();  // Asumiendo que "Tipo" es el primer (y único) atributo adicional
+        String tipo = txtTipo.getText();
         String estado = "A";
 
         if (!usedCodes.contains(Integer.parseInt(codigo))) {
@@ -46,7 +55,7 @@ public class prod_ped extends interfazGeneral {
 
                 cargarDatos();
                 txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
+                txtTipo.setText("");
                 lblEstado.setText("");
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -62,9 +71,9 @@ public class prod_ped extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtTipo.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
-            txtAtributosExtras[0].setEditable(true);
+            txtTipo.setEditable(true);
             CarFlaAct = 1;
             operation = "mod";
             btnActualizar.setEnabled(true);
@@ -81,7 +90,7 @@ public class prod_ped extends interfazGeneral {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
                 txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                txtTipo.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 lblEstado.setText("*");
                 operation = "mod";
                 CarFlaAct = 1;
@@ -96,12 +105,12 @@ public class prod_ped extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtTipo.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("I");
             CarFlaAct = 1;
             operation = "mod";
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setEditable(false);
+            txtTipo.setEditable(false);
             btnActualizar.setEnabled(true);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
@@ -115,7 +124,7 @@ public class prod_ped extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            txtTipo.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText("A");
             CarFlaAct = 1;
             operation = "mod";
@@ -131,7 +140,7 @@ public class prod_ped extends interfazGeneral {
     protected void actualizar() {
         if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
-            String tipo = txtAtributosExtras[0].getText();
+            String tipo = txtTipo.getText();
             String estado = lblEstado.getText();
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("UPDATE procedencia_de_pedido SET PROC_PED_TIP = ?, ESTADO = ? WHERE PRO_PED_COD = ?")) {
@@ -142,10 +151,10 @@ public class prod_ped extends interfazGeneral {
 
                 cargarDatos();
                 txtCodigo.setText("");
-                txtAtributosExtras[0].setText("");
+                txtTipo.setText("");
                 lblEstado.setText("");
                 txtCodigo.setEditable(true);
-                txtAtributosExtras[0].setEditable(true);
+                txtTipo.setEditable(true);
                 btnActualizar.setEnabled(false);
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -153,4 +162,30 @@ public class prod_ped extends interfazGeneral {
             }
         }
     }
+    @Override
+    protected void cancelar() {
+        // Limpiar el campo de texto del código y el campo adicional
+        txtCodigo.setText("");
+        txtTipo.setText("");
+
+        // Restablecer el estado del label de estado
+        lblEstado.setText("");
+
+        // Habilitar/Deshabilitar campos y botones según corresponda
+        txtCodigo.setEditable(true);
+        txtTipo.setEditable(true);
+        btnActualizar.setEnabled(false);
+
+        // Restablecer las variables de control
+        CarFlaAct = 0;
+        operation = "";
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
+        cargarDatos();
+    }
+
 }
