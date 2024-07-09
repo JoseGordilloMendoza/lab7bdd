@@ -79,36 +79,50 @@ public class almacen extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        try {
-            // Validación para asegurar que haya un elemento seleccionado
-            if (comboCodFran.getSelectedIndex() <= 0) {
-                JOptionPane.showMessageDialog(this, "Selecciona una franquicia válida.", "Error", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            String selectedItem = (String) comboCodFran.getSelectedItem();
-            int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
-            String estado = "A";
-
-            int nuevoCodAlm = generateNextCode("almacen", "COD_ALM");
-
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO almacen (COD_ALM, COD_FRAN, ESTADO) VALUES (?, ?, ?)")) {
-                pstmt.setInt(1, nuevoCodAlm);
-                pstmt.setInt(2, codFran);
-                pstmt.setString(3, estado);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+    try {
+        // Validar que txtCodigo no esté vacío y sea un número válido
+        String txtCodigoValue = txtCodigo.getText().trim();
+        if (txtCodigoValue.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Ingresa un código de almacén válido.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
         }
+
+        int nuevoCodAlm;
+        try {
+            nuevoCodAlm = Integer.parseInt(txtCodigoValue);
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        // Validación para asegurar que haya una franquicia seleccionada
+        if (comboCodFran.getSelectedIndex() <= 0) {
+            JOptionPane.showMessageDialog(this, "Selecciona una franquicia válida.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String selectedItem = (String) comboCodFran.getSelectedItem();
+        int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
+        String estado = "A";
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO almacen (COD_ALM, COD_FRAN, ESTADO) VALUES (?, ?, ?)")) {
+            pstmt.setInt(1, nuevoCodAlm);
+            pstmt.setInt(2, codFran);
+            pstmt.setString(3, estado);
+            pstmt.executeUpdate();
+
+            cargarDatos();
+            cancelar();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    } catch (NumberFormatException e) {
+        JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
+
 
     @Override
     protected void modificar() {
