@@ -7,6 +7,7 @@ import java.awt.event.*;
 import java.sql.*;
 import java.util.HashSet;
 import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public abstract class interfazGeneral extends JFrame {
@@ -86,6 +87,9 @@ public abstract class interfazGeneral extends JFrame {
         table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION); // Permite selección de una sola fila
         add(new JScrollPane(table), BorderLayout.CENTER);
+
+        // Configurar la fuente global
+        setUIFont(new FontUIResource(DEFAULT_FONT));
 
         // Configurar la fuente global
         setUIFont(new FontUIResource(DEFAULT_FONT));
@@ -219,6 +223,7 @@ public abstract class interfazGeneral extends JFrame {
         btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
         cargarDatos();
+        cargarDatos();
     }
 
     protected void salir() {
@@ -239,8 +244,14 @@ public abstract class interfazGeneral extends JFrame {
             } else if (estado.equals("*")) {
                 c.setBackground(colorPaEliminado);
             } else {
-                c.setBackground(Color.WHITE);
+                c.setBackground(Color.WHITE); // Color por defecto si el estado no coincide con ninguno de los anteriores
             }
+
+            // Cambiar el color de fondo de toda la fila
+            if (isSelected) {
+                c.setBackground(table.getSelectionBackground());
+            }
+
             return c;
         }
     }
@@ -269,5 +280,19 @@ public abstract class interfazGeneral extends JFrame {
             e.printStackTrace();
         }
         return false;
+    }
+    
+    protected void actualizarEstado(String tabla, String columnaEstado, String columnaCodigo, int codigo, String nuevoEstado, String condicionEstado) {
+        String query = "UPDATE " + tabla + " SET " + columnaEstado + " = ? WHERE " + columnaCodigo + " = ? AND " + columnaEstado + " != ?";
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, nuevoEstado);
+            pstmt.setInt(2, codigo);
+            pstmt.setString(3, condicionEstado);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al actualizar el estado en " + tabla + ": " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

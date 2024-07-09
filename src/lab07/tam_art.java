@@ -38,14 +38,14 @@ public class tam_art extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String codigo = txtCodigo.getText();
+        int codigo = Integer.parseInt(txtCodigo.getText());
         String nombre = txtNombre.getText();
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(codigo))) {
+        if (!usedCodes.contains(codigo)) {
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("INSERT INTO tamaño_del_articulo (COD_TAM_ART, TAM, ESTADO) VALUES (?, ?, ?)")) {
-                pstmt.setString(1, codigo);
+                pstmt.setInt(1, codigo);
                 pstmt.setString(2, nombre);
                 pstmt.setString(3, estado);
                 pstmt.executeUpdate();

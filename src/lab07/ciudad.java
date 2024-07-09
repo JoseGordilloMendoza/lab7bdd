@@ -226,6 +226,7 @@ public class ciudad extends interfazGeneral {
             }
         }
     }
+
     @Override
         protected void cancelar() {
             // Limpiar campos de texto

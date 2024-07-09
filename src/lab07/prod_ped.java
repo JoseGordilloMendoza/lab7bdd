@@ -41,14 +41,14 @@ public class prod_ped extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String codigo = txtCodigo.getText();
+        int codigo = Integer.parseInt(txtCodigo.getText());
         String tipo = txtTipo.getText();
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(codigo))) {
+        if (!usedCodes.contains(codigo)) {
             try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO procedencia_de_pedido (PRO_PED_COD, PROC_PED_TIP, ESTADO) VALUES (?, ?, ?)")) {
-                pstmt.setString(1, codigo);
+                PreparedStatement pstmt = conn.prepareStatement("INSERT INTO procedencia_de_pedido (PRO_PED_COD, PROC_PED_TIP, ESTADO) VALUES (?, ?, ?)")) {
+                pstmt.setInt(1, codigo);
                 pstmt.setString(2, tipo);
                 pstmt.setString(3, estado);
                 pstmt.executeUpdate();

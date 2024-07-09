@@ -19,8 +19,8 @@ public class pais extends interfazGeneral {
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             Statement stmt = conn.createStatement(); 
              ResultSet rs = stmt.executeQuery("SELECT * FROM pais")) {
 
             tableModel.setRowCount(0);
@@ -50,7 +50,7 @@ public class pais extends interfazGeneral {
 
         int codigo = generateNextCode("pais", "COD_PAI");
 
-        try (Connection conn = DatabaseConnection.getConnection();
+        try (Connection conn = DatabaseConnection.getConnection(); 
              PreparedStatement pstmt = conn.prepareStatement("INSERT INTO pais (COD_PAI, NOM_PAI, ESTADO) VALUES (?, ?, ?)")) {
             pstmt.setInt(1, codigo);
             pstmt.setString(2, nombre);
@@ -88,13 +88,18 @@ public class pais extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+                actualizarEstado("region", "ESTADO", "COD_PAI", codPai, "*", "*");
+
+                try (Connection conn = DatabaseConnection.getConnection(); 
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = '*' WHERE COD_PAI = ?")) {
+                    pstmt.setInt(1, codPai);
+                    pstmt.executeUpdate();
+                    cargarDatos();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -103,15 +108,18 @@ public class pais extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            txtNombre.setEditable(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            actualizarEstado("region", "ESTADO", "COD_PAI", codPai, "I", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); 
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = 'I' WHERE COD_PAI = ?")) {
+                pstmt.setInt(1, codPai);
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
@@ -123,13 +131,18 @@ public class pais extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            actualizarEstado("region", "ESTADO", "COD_PAI", codPai, "A", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); 
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = 'A' WHERE COD_PAI = ?")) {
+                pstmt.setInt(1, codPai);
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
@@ -143,7 +156,7 @@ public class pais extends interfazGeneral {
             String codigo = txtCodigo.getText();
             String nombre = txtNombre.getText();
             String estado = lblEstado.getText();
-            try (Connection conn = DatabaseConnection.getConnection();
+            try (Connection conn = DatabaseConnection.getConnection(); 
                  PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET NOM_PAI = ?, ESTADO = ? WHERE COD_PAI = ?")) {
                 pstmt.setString(1, nombre);
                 pstmt.setString(2, estado);
