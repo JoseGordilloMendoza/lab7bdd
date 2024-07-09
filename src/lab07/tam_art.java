@@ -7,7 +7,6 @@ public class tam_art extends interfazGeneral {
 
     public tam_art() {
         super("CRUD TAMAÑO ARTICULOS Interface", new String[]{"Nombre"});
-        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
     @Override
@@ -33,14 +32,14 @@ public class tam_art extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String codigo = txtCodigo.getText();
+        int codigo = generateNextCode("tamaño_del_articulo", "COD_TAM_ART");
         String nombre = txtAtributosExtras[0].getText(); // "Nombre" es el primer (y único) atributo adicional
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(codigo))) {
+        if (!usedCodes.contains(codigo)) {
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("INSERT INTO tamaño_del_articulo (COD_TAM_ART, TAM, ESTADO) VALUES (?, ?, ?)")) {
-                pstmt.setString(1, codigo);
+                pstmt.setInt(1, codigo);
                 pstmt.setString(2, nombre);
                 pstmt.setString(3, estado);
                 pstmt.executeUpdate();

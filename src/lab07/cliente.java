@@ -39,7 +39,7 @@ public class cliente extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String id = txtCodigo.getText();
+        int id = generateNextCode("cliente", "CLI_ID");
         String nombre = txtAtributosExtras[0].getText();
         String apellido = txtAtributosExtras[1].getText();
         String direccion = txtAtributosExtras[2].getText();
@@ -49,10 +49,10 @@ public class cliente extends interfazGeneral {
         String consC = txtAtributosExtras[6].getText();
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(id))) {
+        if (!usedCodes.contains(id)) {
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("INSERT INTO cliente (CLI_ID, NOM_CLI, APE_CLI, DIR_CLI, TEL_CLI, CONS_P, CONS_B, CONS_C, ESTADO) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
-                pstmt.setString(1, id);
+                pstmt.setInt(1, id);
                 pstmt.setString(2, nombre);
                 pstmt.setString(3, apellido);
                 pstmt.setString(4, direccion);

@@ -6,6 +6,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
 import java.util.HashSet;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public abstract class interfazGeneral extends JFrame {
@@ -21,6 +22,9 @@ public abstract class interfazGeneral extends JFrame {
     protected HashSet<Integer> usedCodes = new HashSet<>();
     protected JTextField[] txtAtributosExtras;
     protected JLabel[] lblAtributosExtras;
+
+    // Fuente global para toda la interfaz
+    protected static final Font DEFAULT_FONT = new Font("Oswald", Font.BOLD, 14);
 
     public interfazGeneral(String title, String[] attributeNames) {
         setTitle(title);
@@ -76,6 +80,9 @@ public abstract class interfazGeneral extends JFrame {
         table = new JTable(tableModel);
         add(new JScrollPane(table), BorderLayout.CENTER);
 
+        // Configurar la fuente global
+        setUIFont(new FontUIResource(DEFAULT_FONT));
+
         // Acciones de los botones
         btnAdicionar.addActionListener(e -> adicionar());
         btnModificar.addActionListener(e -> modificar());
@@ -120,6 +127,41 @@ public abstract class interfazGeneral extends JFrame {
         btnActualizar.setEnabled(true);
     }
 
+    // Método para establecer la fuente global en todos los componentes
+    private static void setUIFont(FontUIResource f) {
+        UIManager.put("Button.font", f);
+        UIManager.put("ToggleButton.font", f);
+        UIManager.put("RadioButton.font", f);
+        UIManager.put("CheckBox.font", f);
+        UIManager.put("ColorChooser.font", f);
+        UIManager.put("ComboBox.font", f);
+        UIManager.put("Label.font", f);
+        UIManager.put("List.font", f);
+        UIManager.put("MenuBar.font", f);
+        UIManager.put("MenuItem.font", f);
+        UIManager.put("RadioButtonMenuItem.font", f);
+        UIManager.put("CheckBoxMenuItem.font", f);
+        UIManager.put("Menu.font", f);
+        UIManager.put("PopupMenu.font", f);
+        UIManager.put("OptionPane.font", f);
+        UIManager.put("Panel.font", f);
+        UIManager.put("ProgressBar.font", f);
+        UIManager.put("ScrollPane.font", f);
+        UIManager.put("Viewport.font", f);
+        UIManager.put("TabbedPane.font", f);
+        UIManager.put("Table.font", f);
+        UIManager.put("TableHeader.font", f);
+        UIManager.put("TextField.font", f);
+        UIManager.put("PasswordField.font", f);
+        UIManager.put("TextArea.font", f);
+        UIManager.put("TextPane.font", f);
+        UIManager.put("EditorPane.font", f);
+        UIManager.put("TitledBorder.font", f);
+        UIManager.put("ToolBar.font", f);
+        UIManager.put("ToolTip.font", f);
+        UIManager.put("Tree.font", f);
+    }
+
     protected abstract void cargarDatos();
 
     protected abstract void adicionar();
@@ -146,7 +188,7 @@ public abstract class interfazGeneral extends JFrame {
         table.clearSelection();
 
         // Restablecer la configuración inicial de los botones y campos de texto
-        txtCodigo.setEditable(true);
+        txtCodigo.setEditable(false);
         for (JTextField txtAtributoExtra : txtAtributosExtras) {
             txtAtributoExtra.setEditable(true);
         }
@@ -157,6 +199,7 @@ public abstract class interfazGeneral extends JFrame {
         btnInactivar.setEnabled(false);
         btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
+        cargarDatos();
     }
 
     protected void salir() {
@@ -168,16 +211,26 @@ public abstract class interfazGeneral extends JFrame {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-            String estado = table.getModel().getValueAt(row, table.getColumnCount() - 1).toString();
-            if (estado.equals("A")) {
+
+            // Obtener el estado desde el modelo de la tabla
+            String estado = (String) table.getModel().getValueAt(row, table.getColumnCount() - 1);
+
+            // Definir colores de fondo según el estado
+            if ("A".equals(estado)) {
                 c.setBackground(Color.GREEN);
-            } else if (estado.equals("I")) {
+            } else if ("I".equals(estado)) {
                 c.setBackground(Color.YELLOW);
-            } else if (estado.equals("*")) {
-                c.setBackground(Color.RED);
+            } else if ("*".equals(estado)) {
+                c.setBackground(new Color(255, 118, 89)); // Color personalizado
             } else {
-                c.setBackground(Color.WHITE);
+                c.setBackground(Color.WHITE); // Color por defecto si el estado no coincide con ninguno de los anteriores
             }
+
+            // Cambiar el color de fondo de toda la fila
+            if (isSelected) {
+                c.setBackground(table.getSelectionBackground());
+            }
+
             return c;
         }
     }
@@ -206,5 +259,19 @@ public abstract class interfazGeneral extends JFrame {
             e.printStackTrace();
         }
         return false;
+    }
+    
+    protected void actualizarEstado(String tabla, String columnaEstado, String columnaCodigo, int codigo, String nuevoEstado, String condicionEstado) {
+        String query = "UPDATE " + tabla + " SET " + columnaEstado + " = ? WHERE " + columnaCodigo + " = ? AND " + columnaEstado + " != ?";
+        try (Connection conn = DatabaseConnection.getConnection(); 
+             PreparedStatement pstmt = conn.prepareStatement(query)) {
+            pstmt.setString(1, nuevoEstado);
+            pstmt.setInt(2, codigo);
+            pstmt.setString(3, condicionEstado);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al actualizar el estado en " + tabla + ": " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }

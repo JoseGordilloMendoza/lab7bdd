@@ -4,28 +4,29 @@ import java.sql.*;
 import javax.swing.*;
 import java.awt.*;
 
-public class pais extends interfazGeneral {
+public class tip_art extends interfazGeneral {
 
-    public pais() {
-        super("CRUD Pais Interface", new String[]{"Nombre"});
+    public tip_art() {
+        super("CRUD Tipo de Artículo Interface", new String[]{"Categoría"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); 
-             Statement stmt = conn.createStatement(); 
-             ResultSet rs = stmt.executeQuery("SELECT * FROM pais")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM tipo_de_articulo")) {
 
+            txtCodigo.setText(""+generateNextCode("tipo_de_articulo", "COD_TIP_ART"));
             tableModel.setRowCount(0);
             usedCodes.clear();
             while (rs.next()) {
-                String codigo = rs.getString("COD_PAI");
-                String nombre = rs.getString("NOM_PAI");
+                String codigo = rs.getString("COD_TIP_ART");
+                String categoria = rs.getString("CAT");
                 String estado = rs.getString("ESTADO");
 
                 usedCodes.add(Integer.parseInt(codigo));
-                tableModel.addRow(new Object[]{codigo, nombre, estado});
+                tableModel.addRow(new Object[]{codigo, categoria, estado});
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -34,20 +35,20 @@ public class pais extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String nombre = txtAtributosExtras[0].getText();
+        String categoria = txtAtributosExtras[0].getText();
         String estado = "A";
 
-        if (isDuplicateName(nombre, "pais", "NOM_PAI")) {
-            JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+        if (isDuplicateName(categoria, "tipo_de_articulo", "CAT")) {
+            JOptionPane.showMessageDialog(this, "La categoría ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
-        int codigo = generateNextCode("pais", "COD_PAI");
+        int codigo = generateNextCode("tipo_de_articulo", "COD_TIP_ART");
 
-        try (Connection conn = DatabaseConnection.getConnection(); 
-             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO pais (COD_PAI, NOM_PAI, ESTADO) VALUES (?, ?, ?)")) {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO tipo_de_articulo (COD_TIP_ART, CAT, ESTADO) VALUES (?, ?, ?)")) {
             pstmt.setInt(1, codigo);
-            pstmt.setString(2, nombre);
+            pstmt.setString(2, categoria);
             pstmt.setString(3, estado);
             pstmt.executeUpdate();
 
@@ -82,18 +83,13 @@ public class pais extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-                actualizarEstado("region", "ESTADO", "COD_PAI", codPai, "*", "*");
-
-                try (Connection conn = DatabaseConnection.getConnection(); 
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = '*' WHERE COD_PAI = ?")) {
-                    pstmt.setInt(1, codPai);
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
+                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+                txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+                lblEstado.setText("*");
+                operation = "mod";
+                CarFlaAct = 1;
+                btnActualizar.setEnabled(true);
+                actualizar();
             }
         }
     }
@@ -102,18 +98,15 @@ public class pais extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-            actualizarEstado("region", "ESTADO", "COD_PAI", codPai, "I", "*");
-
-            try (Connection conn = DatabaseConnection.getConnection(); 
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = 'I' WHERE COD_PAI = ?")) {
-                pstmt.setInt(1, codPai);
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            lblEstado.setText("I");
+            CarFlaAct = 1;
+            operation = "mod";
+            txtCodigo.setEditable(false);
+            txtAtributosExtras[0].setEditable(false);
+            btnActualizar.setEnabled(true);
+            actualizar();
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
@@ -125,18 +118,13 @@ public class pais extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-            actualizarEstado("region", "ESTADO", "COD_PAI", codPai, "A", "*");
-
-            try (Connection conn = DatabaseConnection.getConnection(); 
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = 'A' WHERE COD_PAI = ?")) {
-                pstmt.setInt(1, codPai);
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
+            lblEstado.setText("A");
+            CarFlaAct = 1;
+            operation = "mod";
+            btnActualizar.setEnabled(true);
+            actualizar();
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
@@ -148,11 +136,11 @@ public class pais extends interfazGeneral {
     protected void actualizar() {
         if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
-            String nombre = txtAtributosExtras[0].getText();
+            String categoria = txtAtributosExtras[0].getText();
             String estado = lblEstado.getText();
-            try (Connection conn = DatabaseConnection.getConnection(); 
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET NOM_PAI = ?, ESTADO = ? WHERE COD_PAI = ?")) {
-                pstmt.setString(1, nombre);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE tipo_de_articulo SET CAT = ?, ESTADO = ? WHERE COD_TIP_ART = ?")) {
+                pstmt.setString(1, categoria);
                 pstmt.setString(2, estado);
                 pstmt.setString(3, codigo);
                 pstmt.executeUpdate();

@@ -7,6 +7,7 @@ public class prod_ped extends interfazGeneral {
 
     public prod_ped() {
         super("CRUD PROCEDENCIA DE PEDIDOS Interface", new String[]{"Tipo"});
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
     @Override
@@ -32,14 +33,14 @@ public class prod_ped extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String codigo = txtCodigo.getText();
+        int codigo = generateNextCode("procedencia_de_pedido", "PRO_PED_COD");
         String tipo = txtAtributosExtras[0].getText();  // Asumiendo que "Tipo" es el primer (y único) atributo adicional
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(codigo))) {
+        if (!usedCodes.contains(codigo)) {
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("INSERT INTO procedencia_de_pedido (PRO_PED_COD, PROC_PED_TIP, ESTADO) VALUES (?, ?, ?)")) {
-                pstmt.setString(1, codigo);
+                pstmt.setInt(1, codigo);
                 pstmt.setString(2, tipo);
                 pstmt.setString(3, estado);
                 pstmt.executeUpdate();

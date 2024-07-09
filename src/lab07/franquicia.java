@@ -124,14 +124,26 @@ public class franquicia extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codLoc = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodLoc.setSelectedItem(codLoc);
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                try {
+                    int codFran = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+                    String selectedItem = (String) tableModel.getValueAt(selectedRow, 1);
+                    if (selectedItem != null) {
+                        int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
+                        txtCodigo.setText(String.valueOf(codFran));
+                        comboCodLoc.setSelectedItem(selectedItem);
+                        lblEstado.setText("*");
+                        operation = "mod";
+                        CarFlaAct = 1;
+                        btnActualizar.setEnabled(true);
+                        actualizar();
+
+                        actualizarEstado("almacen", "ESTADO", "COD_FRAN", codFran, "*", "*");
+                    } else {
+                        JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (NumberFormatException e) {
+                    JOptionPane.showMessageDialog(this, "Código de franquicia inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -140,19 +152,32 @@ public class franquicia extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codLoc = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodLoc.setSelectedItem(codLoc);
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodLoc.setEnabled(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
+            try {
+                int codFran = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+                String selectedItem = (String) tableModel.getValueAt(selectedRow, 1);
+                if (selectedItem != null) {
+                    int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
+                    txtCodigo.setText(String.valueOf(codFran));
+                    comboCodLoc.setSelectedItem(selectedItem);
+                    lblEstado.setText("I");
+                    CarFlaAct = 1;
+                    operation = "mod";
+                    txtCodigo.setEditable(false);
+                    comboCodLoc.setEnabled(false);
+                    btnActualizar.setEnabled(true);
+                    actualizar();
+
+                    actualizarEstado("almacen", "ESTADO", "COD_FRAN", codFran, "I", "*");
+
+                } else {
+                    JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Código de franquicia inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
+        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
             JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -160,19 +185,32 @@ public class franquicia extends interfazGeneral {
     @Override
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codLoc = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodLoc.setSelectedItem(codLoc);
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
+        if (selectedRow != -1) {
+            Object selectedItemObj = tableModel.getValueAt(selectedRow, 1);
+            if (selectedItemObj != null) {
+                String selectedItem = selectedItemObj.toString();
+                if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
+                    txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+                    String[] parts = selectedItem.split(" / ");
+                    String codLoc = parts[0];
+                    comboCodLoc.setSelectedItem(selectedItem);
+                    lblEstado.setText("A");
+                    CarFlaAct = 1;
+                    operation = "mod";
+                    btnActualizar.setEnabled(true);
+                    actualizar();
+
+                    // Actualizar estado de almacenes relacionados
+                    actualizarEstado("almacen", "ESTADO", "COD_FRAN", Integer.parseInt(txtCodigo.getText()), "A", "I");
+
+                } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
+                    JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
+                } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
+                    JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -182,20 +220,24 @@ public class franquicia extends interfazGeneral {
             try {
                 int codFran = Integer.parseInt(txtCodigo.getText());
                 String selectedItem = (String) comboCodLoc.getSelectedItem();
-                int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
-                String estado = lblEstado.getText();
+                if (selectedItem != null) {
+                    int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
+                    String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE franquicia SET COD_LOC = ?, ESTADO = ? WHERE COD_FRAN = ?")) {
-                    pstmt.setInt(1, codLoc);
-                    pstmt.setString(2, estado);
-                    pstmt.setInt(3, codFran);
-                    pstmt.executeUpdate();
+                    try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE franquicia SET COD_LOC = ?, ESTADO = ? WHERE COD_FRAN = ?")) {
+                        pstmt.setInt(1, codLoc);
+                        pstmt.setString(2, estado);
+                        pstmt.setInt(3, codFran);
+                        pstmt.executeUpdate();
 
-                    cancelar();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        cancelar();
+                        cargarDatos();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
             } catch (NumberFormatException e) {
                 JOptionPane.showMessageDialog(this, "Código de franquicia inválido.", "Error", JOptionPane.ERROR_MESSAGE);

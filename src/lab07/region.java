@@ -11,7 +11,6 @@ public class region extends interfazGeneral {
     private JComboBox<String> comboCodPai;
     private Map<String, Integer> paisMap;
     
-
     public region() {
         super("CRUD Región Interface", new String[]{"País", "Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
@@ -21,7 +20,8 @@ public class region extends interfazGeneral {
     private void cargarPaises() {
         paisMap = new HashMap<>();
         comboCodPai = new JComboBox<>();
-
+        
+        comboCodPai.addItem("Seleccionar pais");
         try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_PAI, NOM_PAI FROM pais WHERE ESTADO = 'A'")) {
 
             while (rs.next()) {
@@ -48,6 +48,7 @@ public class region extends interfazGeneral {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
+            txtCodigo.setText("" + generateNextCode("REGION", "COD_REGI"));
             while (rs.next()) {
                 int codRegi = rs.getInt("COD_REGI");
                 int codPai = rs.getInt("COD_PAI");
@@ -134,15 +135,17 @@ public class region extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codPai = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodPai.setSelectedItem(codPai);
-                txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+                actualizarEstado("ciudad", "ESTADO", "COD_REGI", codRegi, "*", "*");
+
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = '*' WHERE COD_REGI = ?")) {
+                    pstmt.setInt(1, codRegi);
+                    pstmt.executeUpdate();
+                    cargarDatos();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar la región: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -151,18 +154,17 @@ public class region extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codPai = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodPai.setSelectedItem(codPai);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodPai.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            actualizarEstado("ciudad", "ESTADO", "COD_REGI", codRegi, "I", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = 'I' WHERE COD_REGI = ?")) {
+                pstmt.setInt(1, codRegi);
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar la región: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -174,15 +176,17 @@ public class region extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codPai = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodPai.setSelectedItem(codPai);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            actualizarEstado("ciudad", "ESTADO", "COD_REGI", codRegi, "A", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = 'A' WHERE COD_REGI = ?")) {
+                pstmt.setInt(1, codRegi);
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar la región: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -206,6 +210,8 @@ public class region extends interfazGeneral {
                     pstmt.setString(3, estado);
                     pstmt.setInt(4, codRegi);
                     pstmt.executeUpdate();
+
+                    actualizarEstado("ciudad", "ESTADO", "COD_REGI", codRegi, estado, "*");
 
                     cancelar();
                     cargarDatos();

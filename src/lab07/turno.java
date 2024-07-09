@@ -34,15 +34,15 @@ public class turno extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        String codigo = txtCodigo.getText();
+        int codigo = generateNextCode("turno", "TIP_TUR");
         String inicio = txtAtributosExtras[0].getText();
         String fin = txtAtributosExtras[1].getText();
         String estado = "A";
 
-        if (!usedCodes.contains(Integer.parseInt(codigo))) {
+        if (!usedCodes.contains(codigo)) {
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("INSERT INTO turno (TIP_TUR, INI_TUR, FIN_TUR, ESTADO) VALUES (?, ?, ?, ?)")) {
-                pstmt.setString(1, codigo);
+                pstmt.setInt(1, codigo);
                 pstmt.setString(2, inicio);
                 pstmt.setString(3, fin);
                 pstmt.setString(4, estado);

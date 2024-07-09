@@ -15,8 +15,9 @@ public class CRUDInterface extends JFrame {
         JPanel selectorPanel = new JPanel();
         selectorPanel.add(new JLabel("Selecciona la tabla:"));
         tableSelector = new JComboBox<>(new String[]{"pais", "tamaño_del_articulo",
-            "procedencia_de_pedido", "tipo_de_regalo", "turno", "cliente", "region",
-            "franquicia", "localidad", "ciudad", "almacen", "ingrediente Almacen", "regalos Almacen"});
+            "procedencia_de_pedido", "tipo_de_regalo", "turno", "cliente", "region", "tipo_de_articulo",
+            "ingrediente", "receta",
+            "franquicia", "localidad", "ciudad", "almacen", "ingrediente Almacen", "regalos Almacen", "registro Scooter", "factura Gasolinera", "boleta"});
         selectorPanel.add(tableSelector);
         add(selectorPanel, BorderLayout.CENTER);
 
@@ -27,6 +28,42 @@ public class CRUDInterface extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(300, 200);
         setVisible(true);
+
+        // Aplicar la fuente predeterminada a toda la interfaz
+        applyDefaultFont();
+    }
+
+    private void applyDefaultFont() {
+        Font defaultFont = interfazGeneral.DEFAULT_FONT;
+
+        // Aplicar la fuente a todos los componentes
+        Component[] components = getContentPane().getComponents();
+        for (Component component : components) {
+            if (component instanceof JPanel) {
+                JPanel panel = (JPanel) component;
+                applyFontToPanel(panel, defaultFont);
+            } else if (component instanceof JButton) {
+                JButton button = (JButton) component;
+                button.setFont(defaultFont);
+            } else if (component instanceof JLabel) {
+                JLabel label = (JLabel) component;
+                label.setFont(defaultFont);
+            } else if (component instanceof JComboBox) {
+                JComboBox comboBox = (JComboBox) component;
+                comboBox.setFont(defaultFont);
+            }
+        }
+    }
+
+    private void applyFontToPanel(JPanel panel, Font font) {
+        Component[] components = panel.getComponents();
+        for (Component component : components) {
+            if (component instanceof JPanel) {
+                applyFontToPanel((JPanel) component, font);
+            } else {
+                component.setFont(font);
+            }
+        }
     }
 
     private void seleccionarTabla() {
@@ -72,12 +109,30 @@ public class CRUDInterface extends JFrame {
                 case "regalos Almacen":
                     new regaloAlmacen();
                     break;
+                case "tipo_de_articulo":
+                    new tip_art();
+                    break;
+                case "ingrediente":
+                    new ingrediente();
+                    break;
+                case "receta":
+                    new receta();
+                    break;
+                case "registro Scooter":
+                    new reg_scooter();
+                    break;
+                case "factura Gasolinera":
+                    new facturaGas();
+                    break;
+                case "boleta":
+                    new boleta();
+                    break;
                 default:
                     JOptionPane.showMessageDialog(this, "Tabla no reconocida", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
-
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(CRUDInterface::new);
     }

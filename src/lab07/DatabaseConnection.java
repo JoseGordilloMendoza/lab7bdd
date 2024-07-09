@@ -8,7 +8,6 @@ public class DatabaseConnection {
     private static final String URL = "jdbc:mysql://localhost:3306/new_schema";
     private static final String USER = "root";
     private static final String PASSWORD = "dinolado";
-    private static Connection connection = null;
 
     public static Connection getConnection() throws SQLException {
         try {
@@ -16,7 +15,7 @@ public class DatabaseConnection {
             return DriverManager.getConnection(URL, USER, PASSWORD);
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-            throw new SQLException("No se pudo cargar el controlador JDBC");
+            throw new SQLException("Failed to load JDBC driver.");
         }
     }
 
@@ -30,4 +29,3 @@ public class DatabaseConnection {
         }
     }
 }
-

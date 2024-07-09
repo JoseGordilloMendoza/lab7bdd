@@ -131,15 +131,22 @@ public class localidad extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+                int codLoc = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
                 String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodCiu.setSelectedItem(codCiu);
-                txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                String nomLoc = tableModel.getValueAt(selectedRow, 2).toString();
+
+                actualizarEstado("franquicia", "ESTADO", "COD_LOC", codLoc, "*", "*");
+
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET ESTADO = '*' WHERE COD_LOC = ?")) {
+                    pstmt.setInt(1, codLoc);
+                    pstmt.executeUpdate();
+
+                    cargarDatos();
+                    cancelar();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -148,18 +155,22 @@ public class localidad extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            int codLoc = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
             String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodCiu.setSelectedItem(codCiu);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodCiu.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
+            String nomLoc = tableModel.getValueAt(selectedRow, 2).toString();
+
+            actualizarEstado("franquicia", "ESTADO", "COD_LOC", codLoc, "I", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET ESTADO = 'I' WHERE COD_LOC = ?")) {
+                pstmt.setInt(1, codLoc);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -171,15 +182,22 @@ public class localidad extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
+            int codLoc = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
             String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodCiu.setSelectedItem(codCiu);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
+            String nomLoc = tableModel.getValueAt(selectedRow, 2).toString();
+
+            actualizarEstado("franquicia", "ESTADO", "COD_LOC", codLoc, "A", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET ESTADO = 'A' WHERE COD_LOC = ?")) {
+                pstmt.setInt(1, codLoc);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -197,15 +215,19 @@ public class localidad extends interfazGeneral {
                 String nomLoc = txtAtributosExtras[1].getText();
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET COD_CIU = ?, NOM_LOC = ?, ESTADO = ? WHERE COD_LOC = ?")) {
+                if (isDuplicateName(nomLoc, "localidad", "NOM_LOC")) {
+                    JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET COD_CIU = ?, NOM_LOC = ? WHERE COD_LOC = ?")) {
                     pstmt.setInt(1, codCiu);
                     pstmt.setString(2, nomLoc);
-                    pstmt.setString(3, estado);
-                    pstmt.setInt(4, codLoc);
+                    pstmt.setInt(3, codLoc);
                     pstmt.executeUpdate();
 
-                    cancelar();
                     cargarDatos();
+                    cancelar();
                 } catch (SQLException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -214,19 +236,5 @@ public class localidad extends interfazGeneral {
                 JOptionPane.showMessageDialog(this, "Código de localidad inválido.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
-    }
-
-    @Override
-    protected void cancelar() {
-        txtCodigo.setText("");
-        comboCodCiu.setSelectedIndex(0);
-        txtAtributosExtras[1].setText("");
-        lblEstado.setText("A");
-        txtCodigo.setEditable(true);
-        comboCodCiu.setEnabled(true);
-        txtAtributosExtras[1].setEditable(true);
-        CarFlaAct = 0;
-        operation = "";
-        btnActualizar.setEnabled(false);
     }
 }

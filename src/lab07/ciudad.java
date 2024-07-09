@@ -133,15 +133,17 @@ public class ciudad extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodRegi.setSelectedItem(codRegi);
-                txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+                actualizarEstado("localidad", "ESTADO", "COD_CIU", codCiu, "*", "*");
+
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = '*' WHERE COD_CIU = ?")) {
+                    pstmt.setInt(1, codCiu);
+                    pstmt.executeUpdate();
+                    cargarDatos();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -150,18 +152,17 @@ public class ciudad extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodRegi.setSelectedItem(codRegi);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodRegi.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            actualizarEstado("localidad", "ESTADO", "COD_CIU", codCiu, "I", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = 'I' WHERE COD_CIU = ?")) {
+                pstmt.setInt(1, codCiu);
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -173,15 +174,17 @@ public class ciudad extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodRegi.setSelectedItem(codRegi);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            actualizarEstado("localidad", "ESTADO", "COD_CIU", codCiu, "A", "*");
+
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = 'A' WHERE COD_CIU = ?")) {
+                pstmt.setInt(1, codCiu);
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -219,6 +222,7 @@ public class ciudad extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Debes seleccionar una opción para el botón Grabar Cambios", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
     @Override
     protected void cancelar() {
         txtCodigo.setText("");
