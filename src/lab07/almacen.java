@@ -1,7 +1,6 @@
 package lab07;
 
 import javax.swing.*;
-import java.awt.*;
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +33,7 @@ public class almacen extends interfazGeneral {
             while (rs.next()) {
                 int codFran = rs.getInt("COD_FRAN");
                 String nomLoc = rs.getString("NOM_LOC");
-                String item = codFran + " loc " + nomLoc;
+                String item = codFran + " / " + nomLoc; // Corregido el formato del item
                 franquiciaMap.put(item, codFran);
                 comboCodFran.addItem(item);
             }
@@ -70,7 +69,7 @@ public class almacen extends interfazGeneral {
                 String estado = rs.getString("ESTADO");
 
                 usedCodes.add(codAlm);
-                tableModel.addRow(new Object[]{codAlm, codFran + " loc " + nomLoc, estado});
+                tableModel.addRow(new Object[]{codAlm, codFran + " / " + nomLoc, estado}); // Corregido el formato de la fila
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -79,50 +78,49 @@ public class almacen extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-    try {
-        // Validar que txtCodigo no esté vacío y sea un número válido
-        String txtCodigoValue = txtCodigo.getText().trim();
-        if (txtCodigoValue.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Ingresa un código de almacén válido.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        int nuevoCodAlm;
         try {
-            nuevoCodAlm = Integer.parseInt(txtCodigoValue);
-        } catch (NumberFormatException ex) {
+            // Validar que txtCodigo no esté vacío y sea un número válido
+            String txtCodigoValue = txtCodigo.getText().trim();
+            if (txtCodigoValue.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Ingresa un código de almacén válido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            int nuevoCodAlm;
+            try {
+                nuevoCodAlm = Integer.parseInt(txtCodigoValue);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            // Validación para asegurar que haya una franquicia seleccionada
+            if (comboCodFran.getSelectedIndex() <= 0) {
+                JOptionPane.showMessageDialog(this, "Selecciona una franquicia válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            String selectedItem = (String) comboCodFran.getSelectedItem();
+            int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
+            String estado = "A";
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO almacen (COD_ALM, COD_FRAN, ESTADO) VALUES (?, ?, ?)")) {
+                pstmt.setInt(1, nuevoCodAlm);
+                pstmt.setInt(2, codFran);
+                pstmt.setString(3, estado);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
         }
-
-        // Validación para asegurar que haya una franquicia seleccionada
-        if (comboCodFran.getSelectedIndex() <= 0) {
-            JOptionPane.showMessageDialog(this, "Selecciona una franquicia válida.", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        String selectedItem = (String) comboCodFran.getSelectedItem();
-        int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
-        String estado = "A";
-
-        try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO almacen (COD_ALM, COD_FRAN, ESTADO) VALUES (?, ?, ?)")) {
-            pstmt.setInt(1, nuevoCodAlm);
-            pstmt.setInt(2, codFran);
-            pstmt.setString(3, estado);
-            pstmt.executeUpdate();
-
-            cargarDatos();
-            cancelar();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    } catch (NumberFormatException e) {
-        JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
     }
-}
-
 
     @Override
     protected void modificar() {
@@ -148,14 +146,18 @@ public class almacen extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codFran = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodFran.setSelectedItem(codFran);
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                int codAlm = (int) tableModel.getValueAt(selectedRow, 0);
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM almacen WHERE COD_ALM = ?")) {
+                    pstmt.setInt(1, codAlm);
+                    pstmt.executeUpdate();
+
+                    cargarDatos();
+                    cancelar();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -164,16 +166,18 @@ public class almacen extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codFran = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodFran.setSelectedItem(codFran);
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodFran.setEnabled(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codAlm = (int) tableModel.getValueAt(selectedRow, 0);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET ESTADO = 'I' WHERE COD_ALM = ?")) {
+                pstmt.setInt(1, codAlm);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
@@ -185,14 +189,18 @@ public class almacen extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codFran = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodFran.setSelectedItem(codFran);
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codAlm = (int) tableModel.getValueAt(selectedRow, 0);
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET ESTADO = 'A' WHERE COD_ALM = ?")) {
+                pstmt.setInt(1, codAlm);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
@@ -203,27 +211,23 @@ public class almacen extends interfazGeneral {
     @Override
     protected void actualizar() {
         if (CarFlaAct == 1) {
-            try {
-                int codAlm = Integer.parseInt(txtCodigo.getText());
-                String selectedItem = (String) comboCodFran.getSelectedItem();
-                int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
-                String estado = lblEstado.getText();
+            int codAlm = Integer.parseInt(txtCodigo.getText().trim());
+            String selectedItem = (String) comboCodFran.getSelectedItem();
+            int codFran = Integer.parseInt(selectedItem.split(" / ")[0]);
+            String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET COD_FRAN = ?, ESTADO = ? WHERE COD_ALM = ?")) {
-                    pstmt.setInt(1, codFran);
-                    pstmt.setString(2, estado);
-                    pstmt.setInt(3, codAlm);
-                    pstmt.executeUpdate();
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET COD_FRAN = ?, ESTADO = ? WHERE COD_ALM = ?")) {
+                pstmt.setInt(1, codFran);
+                pstmt.setString(2, estado);
+                pstmt.setInt(3, codAlm);
+                pstmt.executeUpdate();
 
-                    cancelar();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Código de almacén inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+                cancelar();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
