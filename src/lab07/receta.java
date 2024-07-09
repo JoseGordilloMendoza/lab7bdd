@@ -9,6 +9,7 @@ import java.util.Map;
 public class receta extends interfazGeneral {
     private JComboBox<String> comboTipoArticulo;
     private JComboBox<String> comboIngrediente;
+    private JTextField txtInstrucciones;
     private Map<String, Integer> tipoArticuloMap;
     private Map<String, Integer> ingredienteMap;
 
@@ -17,6 +18,8 @@ public class receta extends interfazGeneral {
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarTipoArticulos();
         cargarIngredientes();
+        cargarInstrucciones();
+        cargarDatos();
     }
 
     private void cargarTipoArticulos() {
@@ -37,12 +40,7 @@ public class receta extends interfazGeneral {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[0]);
-        dataPanel.add(comboTipoArticulo, 3);
-
-        revalidate();
-        repaint();
+        addExtraComponent(0, comboTipoArticulo);
     }
 
     private void cargarIngredientes() {
@@ -63,12 +61,12 @@ public class receta extends interfazGeneral {
             e.printStackTrace();
         }
 
-        JPanel dataPanel = (JPanel) getContentPane().getComponent(0);
-        dataPanel.remove(txtAtributosExtras[2]);
-        dataPanel.add(comboIngrediente, 7);
+        addExtraComponent(2, comboIngrediente);
+    }
 
-        revalidate();
-        repaint();
+    private void cargarInstrucciones() {
+        txtInstrucciones = new JTextField(20);
+        addExtraComponent(1, txtInstrucciones);
     }
 
     @Override
@@ -99,7 +97,7 @@ public class receta extends interfazGeneral {
 
     private boolean isDuplicateIngredient(int codTipArt, int ingId) {
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM receta WHERE COD_TIP_ART = ? AND ING_ID = ?")) {
+             PreparedStatement pstmt = conn.prepareStatement("SELECT COUNT(*) FROM receta WHERE COD_TIP_ART = ? AND ING_ID = ? AND ESTADO != '*'")) {
             pstmt.setInt(1, codTipArt);
             pstmt.setInt(2, ingId);
             try (ResultSet rs = pstmt.executeQuery()) {
@@ -119,7 +117,7 @@ public class receta extends interfazGeneral {
             int codRec = generateNextCode("receta", "COD_RECETA");
             String selectedItemTipoArticulo = (String) comboTipoArticulo.getSelectedItem();
             int codTipArt = Integer.parseInt(selectedItemTipoArticulo.split(" / ")[0]);
-            String ins = txtAtributosExtras[1].getText();
+            String ins = txtInstrucciones.getText();
             String selectedItemIngrediente = (String) comboIngrediente.getSelectedItem();
             int ingId = Integer.parseInt(selectedItemIngrediente.split(" / ")[0]);
             String estado = "A";
@@ -140,7 +138,11 @@ public class receta extends interfazGeneral {
                     pstmt.executeUpdate();
 
                     cargarDatos();
-                    cancelar();
+                    // Limpiar campos después de insertar
+                    txtCodigo.setText("" + generateNextCode("receta", "COD_RECETA"));
+                    comboTipoArticulo.setSelectedIndex(0);
+                    txtInstrucciones.setText("");
+                    comboIngrediente.setSelectedIndex(0);
                 } catch (SQLException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -160,13 +162,13 @@ public class receta extends interfazGeneral {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codTipArt = tableModel.getValueAt(selectedRow, 1).toString();
             comboTipoArticulo.setSelectedItem(codTipArt);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
+            txtInstrucciones.setText(tableModel.getValueAt(selectedRow, 2).toString());
             String codIng = tableModel.getValueAt(selectedRow, 3).toString();
             comboIngrediente.setSelectedItem(codIng);
             lblEstado.setText(tableModel.getValueAt(selectedRow, 4).toString());
             txtCodigo.setEditable(false);
             comboTipoArticulo.setEnabled(true);
-            txtAtributosExtras[1].setEditable(true);
+            txtInstrucciones.setEditable(true);
             comboIngrediente.setEnabled(true);
             CarFlaAct = 1;
             operation = "mod";
@@ -182,17 +184,15 @@ public class receta extends interfazGeneral {
         if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 4).toString().equals("*")) {
             int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
             if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codTipArt = tableModel.getValueAt(selectedRow, 1).toString();
-                comboTipoArticulo.setSelectedItem(codTipArt);
-                txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-                String codIng = tableModel.getValueAt(selectedRow, 3).toString();
-                comboIngrediente.setSelectedItem(codIng);
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
+                try (Connection conn = DatabaseConnection.getConnection();
+                     PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET ESTADO = '*' WHERE COD_RECETA = ?")) {
+                    pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
+                    pstmt.executeUpdate();
+                    cargarDatos();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
             }
         }
     }
@@ -201,22 +201,16 @@ public class receta extends interfazGeneral {
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codTipArt = tableModel.getValueAt(selectedRow, 1).toString();
-            comboTipoArticulo.setSelectedItem(codTipArt);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            String codIng = tableModel.getValueAt(selectedRow, 3).toString();
-            comboIngrediente.setSelectedItem(codIng);
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboTipoArticulo.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
-            comboIngrediente.setEnabled(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 4).toString().equals("I")) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET ESTADO = 'I' WHERE COD_RECETA = ?")) {
+                pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "Este registro ya está inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede inactivarse", "Error", JOptionPane.ERROR_MESSAGE);
@@ -229,7 +223,7 @@ public class receta extends interfazGeneral {
             int codRec = Integer.parseInt(txtCodigo.getText());
             String selectedItemTipoArticulo = (String) comboTipoArticulo.getSelectedItem();
             int codTipArt = Integer.parseInt(selectedItemTipoArticulo.split(" / ")[0]);
-            String ins = txtAtributosExtras[1].getText();
+            String ins = txtInstrucciones.getText();
             String selectedItemIngrediente = (String) comboIngrediente.getSelectedItem();
             int ingId = Integer.parseInt(selectedItemIngrediente.split(" / ")[0]);
             String estado = lblEstado.getText();
@@ -263,22 +257,16 @@ public class receta extends interfazGeneral {
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codTipArt = tableModel.getValueAt(selectedRow, 1).toString();
-            comboTipoArticulo.setSelectedItem(codTipArt);
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            String codIng = tableModel.getValueAt(selectedRow, 3).toString();
-            comboIngrediente.setSelectedItem(codIng);
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboTipoArticulo.setEnabled(false);
-            txtAtributosExtras[1].setEditable(false);
-            comboIngrediente.setEnabled(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 4).toString().equals("A")) {
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET ESTADO = 'A' WHERE COD_RECETA = ?")) {
+                pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
+                pstmt.executeUpdate();
+                cargarDatos();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "Este registro ya está activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede reactivarse", "Error", JOptionPane.ERROR_MESSAGE);
