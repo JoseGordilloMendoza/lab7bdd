@@ -11,7 +11,6 @@ public class pais extends interfazGeneral {
     public pais() {
         super("CRUD Pais Interface", new String[]{"Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
-        
         // Crear el JTextField para el atributo "Nombre" y agregarlo al panel
         txtNombre = new JTextField();
         addExtraComponent(0, txtNombre);
