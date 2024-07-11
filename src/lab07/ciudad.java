@@ -25,14 +25,12 @@ public class ciudad extends interfazGeneral {
         // Agregar elemento predeterminado
         comboCodRegi.addItem("Seleccionar región");
 
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT COD_REGI, NOM_REGI FROM region WHERE ESTADO = 'A'")) {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_REGI, NOM_REGI FROM region WHERE ESTADO = 'A'")) {
 
             while (rs.next()) {
                 int codRegi = rs.getInt("COD_REGI");
                 String nomRegi = rs.getString("NOM_REGI");
-                regionMap.put(nomRegi, codRegi);
+                regionMap.put(codRegi + " / " + nomRegi, codRegi);
                 comboCodRegi.addItem(codRegi + " / " + nomRegi);
             }
         } catch (SQLException e) {
@@ -54,9 +52,7 @@ public class ciudad extends interfazGeneral {
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT c.COD_CIU, c.COD_REGI, c.NOM_CIU, c.ESTADO, r.NOM_REGI FROM ciudad c JOIN region r ON c.COD_REGI = r.COD_REGI")) {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT c.COD_CIU, c.COD_REGI, c.NOM_CIU, c.ESTADO, r.NOM_REGI FROM ciudad c JOIN region r ON c.COD_REGI = r.COD_REGI")) {
 
             tableModel.setRowCount(0);
             usedCodes.clear();
@@ -85,7 +81,7 @@ public class ciudad extends interfazGeneral {
             }
 
             String selectedItem = (String) comboCodRegi.getSelectedItem();
-            int codRegi = Integer.parseInt(selectedItem.split(" / ")[0]);
+            int codRegi = regionMap.get(selectedItem);
             String nomCiu = txtNomCiu.getText();
             String estado = "A";
 
@@ -96,8 +92,7 @@ public class ciudad extends interfazGeneral {
 
             int codCiu = generateNextCode("ciudad", "COD_CIU");
 
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ciudad (COD_CIU, COD_REGI, NOM_CIU, ESTADO) VALUES (?, ?, ?, ?)")) {
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO ciudad (COD_CIU, COD_REGI, NOM_CIU, ESTADO) VALUES (?, ?, ?, ?)")) {
                 pstmt.setInt(1, codCiu);
                 pstmt.setInt(2, codRegi);
                 pstmt.setString(3, nomCiu);
@@ -136,40 +131,26 @@ public class ciudad extends interfazGeneral {
     }
 
     @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
-                comboCodRegi.setSelectedItem(codRegi);
-                txtNomCiu.setText(tableModel.getValueAt(selectedRow, 2).toString());
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
-            }
-        }
-    }
-
-    @Override
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodRegi.setSelectedItem(codRegi);
-            txtNomCiu.setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            comboCodRegi.setEnabled(false);
-            txtNomCiu.setEditable(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_CIU", codCiu, "I");
+
+                try (PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = 'I' WHERE COD_CIU = ?")) {
+                    pstmt.setInt(1, codCiu);
+                    pstmt.executeUpdate();
+                    cargarDatos();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al inactivar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -178,18 +159,53 @@ public class ciudad extends interfazGeneral {
     }
 
     @Override
+    protected void eliminar() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
+            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+
+                try (Connection conn = DatabaseConnection.getConnection()) {
+                    actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_CIU", codCiu, "*");
+
+                    try (PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = '*' WHERE COD_CIU = ?")) {
+                        pstmt.setInt(1, codCiu);
+                        pstmt.executeUpdate();
+                        cargarDatos();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                        JOptionPane.showMessageDialog(this, "Error al eliminar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }
+
+    @Override
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
-            comboCodRegi.setSelectedItem(codRegi);
-            txtNomCiu.setText(tableModel.getValueAt(selectedRow, 2).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
+            int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_CIU", codCiu, "A");
+
+                try (PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = 'A' WHERE COD_CIU = ?")) {
+                    pstmt.setInt(1, codCiu);
+                    pstmt.executeUpdate();
+                    cargarDatos();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al reactivar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
             JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
         } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
@@ -203,12 +219,18 @@ public class ciudad extends interfazGeneral {
             try {
                 int codCiu = Integer.parseInt(txtCodigo.getText());
                 String selectedItem = (String) comboCodRegi.getSelectedItem();
-                int codRegi = Integer.parseInt(selectedItem.split(" / ")[0]);
+                Integer codRegi = regionMap.get(selectedItem);
+
+                // Verificar si el selectedItem está presente en el mapa
+                if (codRegi == null) {
+                    JOptionPane.showMessageDialog(this, "La región seleccionada no es válida.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 String nomCiu = txtNomCiu.getText();
                 String estado = lblEstado.getText();
 
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET COD_REGI = ?, NOM_CIU = ?, ESTADO = ? WHERE COD_CIU = ?")) {
+                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET COD_REGI = ?, NOM_CIU = ?, ESTADO = ? WHERE COD_CIU = ?")) {
                     pstmt.setInt(1, codRegi);
                     pstmt.setString(2, nomCiu);
                     pstmt.setString(3, estado);
@@ -228,30 +250,29 @@ public class ciudad extends interfazGeneral {
     }
 
     @Override
-        protected void cancelar() {
-            // Limpiar campos de texto
-            txtCodigo.setText("");
-            txtNomCiu.setText(""); // Limpiar el campo de nombre de la ciudad
-            comboCodRegi.setSelectedIndex(0); // Restablecer la selección del combo box
+    protected void cancelar() {
+        // Limpiar campos de texto
+        txtCodigo.setText("");
+        txtNomCiu.setText(""); // Limpiar el campo de nombre de la ciudad
+        comboCodRegi.setSelectedIndex(0); // Restablecer la selección del combo box
 
-            lblEstado.setText("");
+        lblEstado.setText("");
 
-            // Deseleccionar cualquier fila en la tabla
-            table.clearSelection();
+        // Deseleccionar cualquier fila en la tabla
+        table.clearSelection();
 
-            // Restablecer la configuración inicial de los botones y campos de texto
-            txtCodigo.setEditable(true);
-            comboCodRegi.setEnabled(true); // Habilitar el combo box
-            txtNomCiu.setEditable(true); // Habilitar el campo de nombre de la ciudad
+        // Restablecer la configuración inicial de los botones y campos de texto
+        txtCodigo.setEditable(true);
+        comboCodRegi.setEnabled(true); // Habilitar el combo box
+        txtNomCiu.setEditable(true); // Habilitar el campo de nombre de la ciudad
 
-            btnAdicionar.setEnabled(true);
-            btnModificar.setEnabled(false);
-            btnEliminar.setEnabled(false);
-            btnInactivar.setEnabled(false);
-            btnReactivar.setEnabled(false);
-            btnActualizar.setEnabled(false);
+        btnAdicionar.setEnabled(true);
+        btnModificar.setEnabled(false);
+        btnEliminar.setEnabled(false);
+        btnInactivar.setEnabled(false);
+        btnReactivar.setEnabled(false);
+        btnActualizar.setEnabled(false);
 
-            cargarDatos();
-        }
-
+        cargarDatos();
+    }
 }

@@ -19,8 +19,6 @@ public class almacen extends interfazGeneral {
     private void cargarFranquicias() {
         franquiciaMap = new HashMap<>();
         comboCodFran = new JComboBox<>();
-
-        // Agregar elemento predeterminado
         comboCodFran.addItem("Seleccionar franquicia");
 
         try (Connection conn = DatabaseConnection.getConnection();

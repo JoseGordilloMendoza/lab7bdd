@@ -8,59 +8,31 @@ import java.sql.*;
 
 public class reg_scooter extends interfazGeneral {
 
-    private JButton btnFactura;
     private JComboBox<Integer> cbCodFac;
     private JComboBox<Integer> cbCodRep;
 
     public reg_scooter() {
         super("CRUD Registro Scooter Interface", new String[]{"Kilometraje Inicial", "Kilometraje Final", "Código de Repartidor", "Gasolina Scooter", "Código de Factura"});
 
-        // Crear botón para gestionar la factura
-        btnFactura = new JButton("Gestionar Factura");
+        // Crear combo boxes y cargar datos
         cbCodFac = new JComboBox<>();
         cbCodRep = new JComboBox<>();
         cargarCodigosFacturas();
         cargarCodigosRepartidores();
 
-        txtAtributosExtras[2].setLayout(new BorderLayout());
-        txtAtributosExtras[2].add(cbCodRep, BorderLayout.CENTER);
-        txtAtributosExtras[4].setLayout(new BorderLayout());
-        txtAtributosExtras[4].add(cbCodFac, BorderLayout.CENTER);
-        txtAtributosExtras[4].add(btnFactura, BorderLayout.EAST);
+        // Configurar paneles extras
+        addExtraComponent(2, cbCodRep);
+        addExtraComponent(4, cbCodFac);
 
+        // Acción del botón para gestionar factura
+        JButton btnFactura = new JButton("Gestionar Factura");
         btnFactura.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 abrirFacturaGasolinera();
             }
         });
-    }
-
-    private void cargarCodigosRepartidores() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_REP FROM repartidor WHERE ESTADO = 'A'")) {
-            cbCodRep.removeAllItems();
-            while (rs.next()) {
-                int codRep = rs.getInt("COD_REP");
-                cbCodRep.addItem(codRep);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al cargar los códigos de repartidores: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    private void cargarCodigosFacturas() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_FAC FROM factura_gasolinera WHERE ESTADO = 'A'")) {
-
-            cbCodFac.removeAllItems();
-            while (rs.next()) {
-                int codFac = rs.getInt("COD_FAC");
-                cbCodFac.addItem(codFac);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al cargar los códigos de facturas: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-        }
+        addExtraComponent(4, btnFactura);
     }
 
     @Override
@@ -89,10 +61,10 @@ public class reg_scooter extends interfazGeneral {
     protected void adicionar() {
         try {
             int codRegSco = generateNextCode("registro_scooter", "COD_REG_SCO");
-            int kilIni = Integer.parseInt(txtAtributosExtras[0].getText());
-            int kilFin = Integer.parseInt(txtAtributosExtras[1].getText());
+            int kilIni = Integer.parseInt(getTextFromPanel(0));
+            int kilFin = Integer.parseInt(getTextFromPanel(1));
             int codRep = (int) cbCodRep.getSelectedItem();
-            int gasSco = Integer.parseInt(txtAtributosExtras[3].getText());
+            int gasSco = Integer.parseInt(getTextFromPanel(3));
             int codFac = (int) cbCodFac.getSelectedItem();
 
             try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO registro_scooter (COD_REG_SCO, KIL_INI, KIL_FIN, COD_REP, GAS_SCO, COD_FAC) VALUES (?, ?, ?, ?, ?, ?)")) {
@@ -111,7 +83,7 @@ public class reg_scooter extends interfazGeneral {
                 JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Código de registro o datos inválidos.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Datos inválidos.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -122,14 +94,14 @@ public class reg_scooter extends interfazGeneral {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
             txtCodigo.setText(String.valueOf(codRegSco));
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            txtAtributosExtras[2].setText(tableModel.getValueAt(selectedRow, 3).toString());
-            txtAtributosExtras[3].setText(tableModel.getValueAt(selectedRow, 4).toString());
+            setTextInPanel(0, tableModel.getValueAt(selectedRow, 1).toString());
+            setTextInPanel(1, tableModel.getValueAt(selectedRow, 2).toString());
+            setTextInPanel(2, tableModel.getValueAt(selectedRow, 3).toString());
+            setTextInPanel(3, tableModel.getValueAt(selectedRow, 4).toString());
             cbCodFac.setSelectedItem(tableModel.getValueAt(selectedRow, 5));
             btnActualizar.setEnabled(true);
         } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Selecciona un registro para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -138,7 +110,7 @@ public class reg_scooter extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1) {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("DELETE FROM registro_scooter WHERE COD_REG_SCO = ?")) {
+            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = '*' WHERE COD_PAI = ?")) {
 
                 pstmt.setInt(1, codRegSco);
                 pstmt.executeUpdate();
@@ -157,17 +129,11 @@ public class reg_scooter extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1) {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE registro_scooter SET ESTADO = 'I' WHERE COD_REG_SCO = ?")) {
-
-                pstmt.setInt(1, codRegSco);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            lblEstado.setText("I");
+            cargarDatos();
+            cancelar();
+        } else {
+            JOptionPane.showMessageDialog(this, "Selecciona un registro para inactivar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -176,17 +142,11 @@ public class reg_scooter extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1) {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE registro_scooter SET ESTADO = 'A' WHERE COD_REG_SCO = ?")) {
-
-                pstmt.setInt(1, codRegSco);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            lblEstado.setText("A");
+            cargarDatos();
+            cancelar();
+        } else {
+            JOptionPane.showMessageDialog(this, "Selecciona un registro para reactivar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -194,10 +154,10 @@ public class reg_scooter extends interfazGeneral {
     protected void actualizar() {
         try {
             int codRegSco = Integer.parseInt(txtCodigo.getText());
-            int kilIni = Integer.parseInt(txtAtributosExtras[0].getText());
-            int kilFin = Integer.parseInt(txtAtributosExtras[1].getText());
-            int codRep = Integer.parseInt(txtAtributosExtras[2].getText());
-            int gasSco = Integer.parseInt(txtAtributosExtras[3].getText());
+            int kilIni = Integer.parseInt(getTextFromPanel(0));
+            int kilFin = Integer.parseInt(getTextFromPanel(1));
+            int codRep = Integer.parseInt(getTextFromPanel(2));
+            int gasSco = Integer.parseInt(getTextFromPanel(3));
             int codFac = (int) cbCodFac.getSelectedItem();
 
             try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE registro_scooter SET KIL_INI = ?, KIL_FIN = ?, COD_REP = ?, GAS_SCO = ?, COD_FAC = ? WHERE COD_REG_SCO = ?")) {
@@ -217,12 +177,74 @@ public class reg_scooter extends interfazGeneral {
                 JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(this, "Código de registro o datos inválidos.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Datos inválidos.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
+    private void cargarCodigosRepartidores() {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_REP FROM repartidor WHERE ESTADO = 'A'")) {
+            cbCodRep.removeAllItems();
+            while (rs.next()) {
+                int codRep = rs.getInt("COD_REP");
+                cbCodRep.addItem(codRep);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al cargar los cód");
+    }
+    }
+
+    private void cargarCodigosFacturas() {
+        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_FAC FROM factura_gasolinera WHERE ESTADO = 'A'")) {
+            cbCodFac.removeAllItems();
+            while (rs.next()) {
+                int codFac = rs.getInt("COD_FAC");
+                cbCodFac.addItem(codFac);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Error al cargar los códigos de factura: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    @Override
+    protected void cancelar() {
+        super.cancelar();
+        cbCodRep.setSelectedIndex(0);
+        cbCodFac.setSelectedIndex(0);
+    }
+
+    @Override
+    protected void salir() {
+        super.salir();
+        cbCodRep.setSelectedIndex(0);
+        cbCodFac.setSelectedIndex(0);
+    }
+
     private void abrirFacturaGasolinera() {
-        new facturaGas();
-        cargarCodigosFacturas();
+        int codFac = (int) cbCodFac.getSelectedItem();
+        // Implementa la lógica para abrir y gestionar la factura de gasolinera
+        JOptionPane.showMessageDialog(this, "Gestionando factura de gasolinera: " + codFac);
+    }
+
+    private String getTextFromPanel(int index) {
+        if (index >= 0 && index < pnlAtributosExtras.length) {
+            Component component = pnlAtributosExtras[index].getComponent(0);
+            if (component instanceof JTextField) {
+                JTextField textField = (JTextField) component;
+                return textField.getText();
+            }
+        }
+        return "";
+    }
+
+    private void setTextInPanel(int index, String text) {
+        if (index >= 0 && index < pnlAtributosExtras.length) {
+            Component component = pnlAtributosExtras[index].getComponent(0);
+            if (component instanceof JTextField) {
+                JTextField textField = (JTextField) component;
+                textField.setText(text);
+            }
+        }
     }
 }

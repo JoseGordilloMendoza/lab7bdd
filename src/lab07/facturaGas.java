@@ -7,7 +7,7 @@ import java.sql.*;
 public class facturaGas extends interfazGeneral {
 
     public facturaGas() {
-        super("Gestión de Factura Gasolinera", new String[]{"Cantidad Cal", "Precio Gal", "Costo Total"});
+        super("Gestión de Factura Gasolinera", new String[]{"Cantidad Cal", "Precio Gal", "Costo Total", "Estado"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
@@ -36,10 +36,10 @@ public class facturaGas extends interfazGeneral {
     protected void adicionar() {
         try {
             int codFac = generateNextCode("factura_gasolinera", "COD_FAC");
-            int cantCal = Integer.parseInt(txtAtributosExtras[0].getText());
-            int precioGal = Integer.parseInt(txtAtributosExtras[1].getText());
-            int costTot = Integer.parseInt(txtAtributosExtras[2].getText());
-            String estado = txtAtributosExtras[3].getText();
+            int cantCal = Integer.parseInt(getTextFromPanel(0));
+            int precioGal = Integer.parseInt(getTextFromPanel(1));
+            int costTot = Integer.parseInt(getTextFromPanel(2));
+            String estado = getTextFromPanel(3);
 
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("INSERT INTO factura_gasolinera (COD_FAC, CANT_CAL, PRECIO_GAL, COST_TOT, ESTADO) VALUES (?, ?, ?, ?, ?)")) {
@@ -69,10 +69,10 @@ public class facturaGas extends interfazGeneral {
             int codFac = (int) tableModel.getValueAt(selectedRow, 0);
             txtCodigo.setText(String.valueOf(codFac));
             txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
-            txtAtributosExtras[1].setText(tableModel.getValueAt(selectedRow, 2).toString());
-            txtAtributosExtras[2].setText(tableModel.getValueAt(selectedRow, 3).toString());
-            txtAtributosExtras[3].setText(tableModel.getValueAt(selectedRow, 4).toString());
+            setTextInPanel(0, tableModel.getValueAt(selectedRow, 1).toString());
+            setTextInPanel(1, tableModel.getValueAt(selectedRow, 2).toString());
+            setTextInPanel(2, tableModel.getValueAt(selectedRow, 3).toString());
+            setTextInPanel(3, tableModel.getValueAt(selectedRow, 4).toString());
             btnActualizar.setEnabled(true);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -143,10 +143,10 @@ public class facturaGas extends interfazGeneral {
     protected void actualizar() {
         try {
             int codFac = Integer.parseInt(txtCodigo.getText());
-            int cantCal = Integer.parseInt(txtAtributosExtras[0].getText());
-            int precioGal = Integer.parseInt(txtAtributosExtras[1].getText());
-            int costTot = Integer.parseInt(txtAtributosExtras[2].getText());
-            String estado = txtAtributosExtras[3].getText();
+            int cantCal = Integer.parseInt(getTextFromPanel(0));
+            int precioGal = Integer.parseInt(getTextFromPanel(1));
+            int costTot = Integer.parseInt(getTextFromPanel(2));
+            String estado = getTextFromPanel(3);
 
             try (Connection conn = DatabaseConnection.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement("UPDATE factura_gasolinera SET CANT_CAL = ?, PRECIO_GAL = ?, COST_TOT = ?, ESTADO = ? WHERE COD_FAC = ?")) {
@@ -169,5 +169,42 @@ public class facturaGas extends interfazGeneral {
         }
     }
 
-    
+    @Override
+    protected void cancelar() {
+        super.cancelar();
+        setTextInPanel(0, "");
+        setTextInPanel(1, "");
+        setTextInPanel(2, "");
+        setTextInPanel(3, "");
+    }
+
+    @Override
+    protected void salir() {
+        super.salir();
+        setTextInPanel(0, "");
+        setTextInPanel(1, "");
+        setTextInPanel(2, "");
+        setTextInPanel(3, "");
+    }
+
+    private String getTextFromPanel(int index) {
+        if (index >= 0 && index < pnlAtributosExtras.length) {
+            Component component = pnlAtributosExtras[index].getComponent(0);
+            if (component instanceof JTextField) {
+                JTextField textField = (JTextField) component;
+                return textField.getText();
+            }
+        }
+        return "";
+    }
+
+    private void setTextInPanel(int index, String text) {
+        if (index >= 0 && index < pnlAtributosExtras.length) {
+            Component component = pnlAtributosExtras[index].getComponent(0);
+            if (component instanceof JTextField) {
+                JTextField textField = (JTextField) component;
+                textField.setText(text);
+            }
+        }
+    }
 }

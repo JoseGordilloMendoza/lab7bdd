@@ -5,6 +5,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.HashSet;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.plaf.FontUIResource;
@@ -24,7 +25,7 @@ public abstract class interfazGeneral extends JFrame {
     protected JPanel[] pnlAtributosExtras;
     protected JLabel[] lblAtributosExtras;
     protected JPanel dataPanel;
-    
+
     // Fuente global para toda la interfaz
     protected static final Font DEFAULT_FONT = new Font("Oswald", Font.BOLD, 14);
 
@@ -281,18 +282,66 @@ public abstract class interfazGeneral extends JFrame {
         }
         return false;
     }
-    
-    protected void actualizarEstado(String tabla, String columnaEstado, String columnaCodigo, int codigo, String nuevoEstado, String condicionEstado) {
-        String query = "UPDATE " + tabla + " SET " + columnaEstado + " = ? WHERE " + columnaCodigo + " = ? AND " + columnaEstado + " != ?";
-        try (Connection conn = DatabaseConnection.getConnection(); 
-             PreparedStatement pstmt = conn.prepareStatement(query)) {
-            pstmt.setString(1, nuevoEstado);
-            pstmt.setInt(2, codigo);
-            pstmt.setString(3, condicionEstado);
-            pstmt.executeUpdate();
+
+    public void actualizarEstadoEnCascada(Connection conn, String tablaPrincipal, String columnaEstado, String columnaCodigo, int codigoInicial, String nuevoEstado) {
+        try {
+            // Actualizar estado en la tabla principal
+            actualizarEstado(conn, tablaPrincipal, columnaEstado, columnaCodigo, codigoInicial, nuevoEstado);
+
+            // Obtener tablas relacionadas para la tabla principal
+            ArrayList<String> tablasRelacionadas = obtenerTablasRelacionadas(conn, tablaPrincipal);
+
+            // Procesar actualización en cascada para cada tabla relacionada
+            for (String tabla : tablasRelacionadas) {
+                // Obtener código relacionado para cada tabla
+                ArrayList<Integer> codigosRelacionados = obtenerCodigosRelacionados(conn, tabla, columnaCodigo, codigoInicial);
+
+                // Actualizar estado en cascada para cada código relacionado
+                for (int codigo : codigosRelacionados) {
+                    actualizarEstadoEnCascada(conn, tabla, columnaEstado, columnaCodigo, codigo, nuevoEstado);
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al actualizar el estado en " + tabla + ": " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    private void actualizarEstado(Connection conn, String tabla, String columnaEstado, String columnaCodigo, int codigo, String nuevoEstado) throws SQLException {
+        String sql = "UPDATE " + tabla + " SET " + columnaEstado + " = ? WHERE " + columnaCodigo + " = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, nuevoEstado);
+            stmt.setInt(2, codigo);
+            stmt.executeUpdate();
+            System.out.println("Ejecutando actualización en tabla: " + tabla + ", columna de estado: " + columnaEstado + ", código: " + codigo);
+        }
+    }
+
+    private ArrayList<String> obtenerTablasRelacionadas(Connection conn, String tablaPrincipal) throws SQLException {
+        ArrayList<String> tablasRelacionadas = new ArrayList<>();
+        // Lógica para obtener las tablas relacionadas a la tablaPrincipal
+        // Por ejemplo, consultar metadatos de la base de datos para encontrar relaciones
+        // Simulado aquí con un ejemplo:
+        if (tablaPrincipal.equals("pais")) {
+            tablasRelacionadas.add("region");
+        } else if (tablaPrincipal.equals("region")) {
+            tablasRelacionadas.add("ciudad");
+        }
+        System.out.println("Obteniendo tablas relacionadas para la tabla: " + tablaPrincipal);
+        return tablasRelacionadas;
+    }
+
+    private ArrayList<Integer> obtenerCodigosRelacionados(Connection conn, String tabla, String columnaCodigo, int codigo) throws SQLException {
+        ArrayList<Integer> codigosRelacionados = new ArrayList<>();
+        String sql = "SELECT " + columnaCodigo + " FROM " + tabla + " WHERE " + columnaCodigo + " = ?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, codigo);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                codigosRelacionados.add(rs.getInt(columnaCodigo));
+            }
+        }
+        System.out.println("Obteniendo códigos relacionados para tabla: " + tabla + ", columna: " + columnaCodigo + ", con código: " + codigo);
+        return codigosRelacionados;
+    }
+
 }
