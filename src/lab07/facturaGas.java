@@ -54,6 +54,10 @@ public class facturaGas extends interfazGeneral {
                 actualizarCostoTotal();
             }
         });
+        
+        tablaNombre="factura_gasolinera";
+        PK="COD_FAC";
+        columns=5;
     }
 
     private void actualizarCostoTotal() {
@@ -139,74 +143,7 @@ public class facturaGas extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Seleccione una fila para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("A")) {
-            String estado = table.getValueAt(selectedRow, 4).toString();
-            int codFac = (int) tableModel.getValueAt(selectedRow, 0);
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM factura_gasolinera WHERE COD_FAC = ?")) {
-
-                    pstmt.setInt(1, codFac);
-                    pstmt.executeUpdate();
-
-                    cargarDatos();
-                    cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Seleccione una fila activa para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("A")) {
-            int codFac = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE factura_gasolinera SET ESTADO = 'I' WHERE COD_FAC = ?")) {
-
-                pstmt.setInt(1, codFac);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Seleccione una fila activa para inactivar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("I")) {
-            int codFac = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE factura_gasolinera SET ESTADO = 'A' WHERE COD_FAC = ?")) {
-
-                pstmt.setInt(1, codFac);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Seleccione una fila inactiva para reactivar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
+    
     @Override
     protected void actualizar() {
         try {

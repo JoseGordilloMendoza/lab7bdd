@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class articulo extends interfazGeneral {
-
     private JTextField txtArtNom, txtPrecArt;
     private JComboBox<String> comboCodTipArt, comboCodTamArt;
     private Map<String, Long> codTipArtMap, codTamArtMap;
@@ -19,6 +18,9 @@ public class articulo extends interfazGeneral {
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarCombos();
         txtArtNom.setEditable(false);
+        tablaNombre="articulo";
+        PK="ART_COD";
+        columns=6;
     }
 
     private void cargarCombos() {
@@ -201,76 +203,7 @@ public class articulo extends interfazGeneral {
             }
         }
         return null;
-    }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int artCod = (int) tableModel.getValueAt(selectedRow, 0);
-            String estado = tableModel.getValueAt(selectedRow, 5).toString();
-            if (!estado.equals("*")) {
-                int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-                if (confirmacion == JOptionPane.YES_OPTION) {
-                    try (Connection conn = DatabaseConnection.getConnection();
-                         PreparedStatement pstmt = conn.prepareStatement("UPDATE articulo SET ESTADO = '*' WHERE ART_COD = ?")) {
-                        pstmt.setLong(1, artCod);
-                        pstmt.executeUpdate();
-                        cargarDatos();
-                        cancelar();
-                        JOptionPane.showMessageDialog(this, "Registro eliminado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "Este registro ya está eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int artCod = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE articulo SET ESTADO = 'I' WHERE ART_COD = ?")) {
-                pstmt.setLong(1, artCod);
-                pstmt.executeUpdate();
-                cargarDatos();
-                JOptionPane.showMessageDialog(this, "Registro inactivado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para inactivar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int artCod = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE articulo SET ESTADO = 'A' WHERE ART_COD = ?")) {
-                pstmt.setLong(1, artCod);
-                pstmt.executeUpdate();
-                cargarDatos();
-                JOptionPane.showMessageDialog(this, "Registro activado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al activar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para activar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
+    }    
 
     @Override
     protected void actualizar() {

@@ -15,6 +15,9 @@ public class franquicia extends interfazGeneral {
         super("CRUD Franquicia Interface", new String[]{"Localidad"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarLocalidades();
+        tablaNombre="franquicia";
+        PK="COD_FRAN";
+        columns=3;
     }
 
     private void cargarLocalidades() {
@@ -99,7 +102,9 @@ public class franquicia extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
+        String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
+        if (selectedRow != -1 && estado.equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codLoc = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodLoc.setSelectedItem(codLoc);
@@ -113,103 +118,6 @@ public class franquicia extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                try {
-                    int codFran = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-                    String selectedItem = (String) tableModel.getValueAt(selectedRow, 1);
-                    if (selectedItem != null) {
-                        int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
-                        txtCodigo.setText(String.valueOf(codFran));
-                        comboCodLoc.setSelectedItem(selectedItem);
-                        lblEstado.setText("*");
-                        operation = "mod";
-                        CarFlaAct = 1;
-                        btnActualizar.setEnabled(true);
-                        actualizar();
-
-                        
-                    } else {
-                        JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(this, "Código de franquicia inválido.", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            try {
-                int codFran = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-                String selectedItem = (String) tableModel.getValueAt(selectedRow, 1);
-                if (selectedItem != null) {
-                    int codLoc = Integer.parseInt(selectedItem.split(" / ")[0]);
-                    txtCodigo.setText(String.valueOf(codFran));
-                    comboCodLoc.setSelectedItem(selectedItem);
-                    lblEstado.setText("I");
-                    CarFlaAct = 1;
-                    operation = "mod";
-                    txtCodigo.setEditable(false);
-                    comboCodLoc.setEnabled(false);
-                    btnActualizar.setEnabled(true);
-                    actualizar();
-
-
-                    
-                } else {
-                    JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Código de franquicia inválido.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            Object selectedItemObj = tableModel.getValueAt(selectedRow, 1);
-            if (selectedItemObj != null) {
-                String selectedItem = selectedItemObj.toString();
-                if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-                    txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                    String[] parts = selectedItem.split(" / ");
-                    String codLoc = parts[0];
-                    comboCodLoc.setSelectedItem(selectedItem);
-                    lblEstado.setText("A");
-                    CarFlaAct = 1;
-                    operation = "mod";
-                    btnActualizar.setEnabled(true);
-                    actualizar();
-
-                    // Actualizar estado de almacenes relacionados
-                    
-                   
-                } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-                    JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
-                } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-                    JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } else {
-                JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
     @Override
     protected void actualizar() {
         if (CarFlaAct == 1) {

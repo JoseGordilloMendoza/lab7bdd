@@ -13,6 +13,9 @@ public class regalo extends interfazGeneral {
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarComponentes();
         cargarDatos();
+        tablaNombre="regalo";
+        PK="COD_REG";
+        columns=5;
     }
 
     private void cargarComponentes() {
@@ -94,7 +97,9 @@ public class regalo extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+        String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
+        if (selectedRow != -1 && estado.equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             txtLimite.setText(tableModel.getValueAt(selectedRow, 1).toString());
             txtDescripcion.setText(tableModel.getValueAt(selectedRow, 2).toString());
@@ -108,64 +113,6 @@ public class regalo extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Seleccione una fila para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM regalo WHERE COD_REG = ?")) {
-                    pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Seleccione una fila para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE regalo SET ESTADO = 'I' WHERE COD_REG = ?")) {
-                pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Seleccione una fila para inactivar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE regalo SET ESTADO = 'A' WHERE COD_REG = ?")) {
-                pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Seleccione una fila para reactivar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     @Override
     protected void actualizar() {
         try {

@@ -17,6 +17,10 @@ public class receta extends interfazGeneral {
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarDatos();
         cargarComponentes();
+        tablaNombre="receta";
+        PK="COD_RECETA";
+        columns=4;
+        
     }
 
     private void cargarComponentes() {
@@ -85,8 +89,11 @@ public class receta extends interfazGeneral {
 
     @Override
     protected void modificar() {
+        
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+            String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
+        if (selectedRow != -1 && estado.equals("A")) {
             txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             txtDescripcion.setText(tableModel.getValueAt(selectedRow, 2).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 3).toString());
@@ -96,50 +103,7 @@ public class receta extends interfazGeneral {
             operation = "mod";
             btnActualizar.setEnabled(true);
         } else {
-            JOptionPane.showMessageDialog(this, "Selecciona un registro para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void eliminar() {
-        int cod=Integer.parseInt(txtCodigo.getText());
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET ESTADO = '*' WHERE COD_RECETA = ?")) {
-                    pstmt.setInt(1, cod);
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-        else {
-                JOptionPane.showMessageDialog(this, "Este artículo no puede ser eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET ESTADO = 'I' WHERE COD_RECETA = ?")) {
-                pstmt.setInt(1, Integer.parseInt(txtCodigo.getText()));
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "Este registro ya está inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede inactivarse", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Selecciona un registro ACTIVO para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -167,26 +131,6 @@ public class receta extends interfazGeneral {
             }
         } catch (NumberFormatException e) {
             JOptionPane.showMessageDialog(this, "Código de receta inválido.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta SET ESTADO = 'A' WHERE COD_RECETA = ?")) {
-                pstmt.setInt(1, Integer.parseInt(txtCodigo.getText()));
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "Este registro ya está activo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede reactivarse", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }

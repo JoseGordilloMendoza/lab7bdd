@@ -12,6 +12,9 @@ public class tip_art extends interfazGeneral {
         txtCategoria = new JTextField();
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         addExtraComponent(0, txtCategoria);
+        tablaNombre="tipo_de_articulo";
+        PK="COD_TIP_ART";
+        columns=3;
     }
 
     @Override
@@ -77,61 +80,6 @@ public class tip_art extends interfazGeneral {
             btnActualizar.setEnabled(true);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-                txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
-                lblEstado.setText("*");
-                operation = "mod";
-                CarFlaAct = 1;
-                btnActualizar.setEnabled(true);
-                actualizar();
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
-            lblEstado.setText("I");
-            CarFlaAct = 1;
-            operation = "mod";
-            txtCodigo.setEditable(false);
-            txtCategoria.setEditable(false);
-            btnActualizar.setEnabled(true);
-            actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
-            txtCategoria.setText(tableModel.getValueAt(selectedRow, 1).toString());
-            lblEstado.setText("A");
-            CarFlaAct = 1;
-            operation = "mod";
-            btnActualizar.setEnabled(true);
-            actualizar();
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

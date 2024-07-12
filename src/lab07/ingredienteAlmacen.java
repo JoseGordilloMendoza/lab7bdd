@@ -16,6 +16,9 @@ public class ingredienteAlmacen extends interfazGeneral {
         super("CRUD Ingrediente Almacén", new String[]{"STO_ACT", "STO_MIN", "STO_MAX", "STO_SEG", "ING_ID", "COD_ALM"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarCombos();
+        tablaNombre="ingrediente_almacen";
+        PK="COD_ING_ALM";
+        columns=8;
     }
 
     private void cargarCombos() {
@@ -141,13 +144,15 @@ public class ingredienteAlmacen extends interfazGeneral {
 
     @Override
     protected void modificar() {
+        
         int selectedRow = table.getSelectedRow();
+        
         if (selectedRow != -1) {
             int codIngAlm = (int) tableModel.getValueAt(selectedRow, 0);
-            String estado = tableModel.getValueAt(selectedRow, 7).toString();
+            String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
 
             // Verificar si el estado permite la modificación (estado != '*')
-            if (!estado.equals("*")) {
+            if (!estado.equals("*")&& estado.equals("A")) {
                 txtCodigo.setText(String.valueOf(codIngAlm));
                 txtStoAct.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 txtStoMin.setText(tableModel.getValueAt(selectedRow, 2).toString());

@@ -14,6 +14,9 @@ public class repartidor extends interfazGeneral {
         super("Gestión de Repartidores", new String[]{"Nombre", "Scooter", "Turno"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarDatosExtra();
+        tablaNombre="repartidord";
+        PK="COD_REP";
+        columns=5;
     }
 
     private void cargarDatosExtra() {
@@ -134,56 +137,6 @@ public class repartidor extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Debe seleccionar un repartidor para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codigo = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "repartidor", "ESTADO", "COD_REP", codigo, "*");
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codigo = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "repartidor", "ESTADO", "COD_REP", codigo, "I");
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-            int selectedRow = table.getSelectedRow();
-            if (selectedRow != -1) {
-                int codigo = (int) tableModel.getValueAt(selectedRow, 0);
-
-                try (Connection conn = DatabaseConnection.getConnection()) {
-                    actualizarEstadoEnCascada(conn, "repartidor", "ESTADO", "COD_REP", codigo, "A");
-                    cargarDatos();
-                    cancelar();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
         @Override
     protected void actualizar() {
         int selectedRow = table.getSelectedRow();

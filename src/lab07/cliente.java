@@ -17,6 +17,10 @@ public class cliente extends interfazGeneral {
             txtAtributosExtras[i] = new JTextField();
             addExtraComponent(i, txtAtributosExtras[i]);
         }
+        
+        tablaNombre="cliente";
+        PK="CLI_ID";
+        columns=9;
     }
 
     @Override
@@ -84,7 +88,9 @@ public class cliente extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 8).toString().equals("A")) {
+        String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
+        if (selectedRow != -1 && estado.equals("A")) {
             // Obtener y establecer los valores en los campos correspondientes
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             for (int i = 0; i < txtAtributosExtras.length; i++) {
@@ -106,75 +112,7 @@ public class cliente extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 8).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                String codigo = tableModel.getValueAt(selectedRow, 0).toString();
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE cliente SET ESTADO = '*' WHERE CLI_ID = ?")) {
-                    pstmt.setString(1, codigo);
-                    pstmt.executeUpdate();
-
-                    cargarDatos();
-                    cancelar();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 8).toString().equals("A")) {
-            String codigo = tableModel.getValueAt(selectedRow, 0).toString();
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE cliente SET ESTADO = 'I' WHERE CLI_ID = ?")) {
-                pstmt.setString(1, codigo);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "El registro ya está inactivo.", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 8).toString().equals("I")) {
-            String codigo = tableModel.getValueAt(selectedRow, 0).toString();
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE cliente SET ESTADO = 'A' WHERE CLI_ID = ?")) {
-                pstmt.setString(1, codigo);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "El registro ya está activo.", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 8).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
+    
     @Override
     protected void actualizar() {
         if (CarFlaAct == 1) {

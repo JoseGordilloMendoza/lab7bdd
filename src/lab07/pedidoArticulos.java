@@ -150,6 +150,8 @@ public class pedidoArticulos extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
+        String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
         if (selectedRow != -1) {
             String artCodStr = table.getValueAt(selectedRow, 1).toString();
             int artCod = Integer.parseInt(artCodStr.split(" / ")[0]);
@@ -159,9 +161,8 @@ public class pedidoArticulos extends interfazGeneral {
 
             int cantidad = (int) table.getValueAt(selectedRow, 3);
             int subtotal = (int) table.getValueAt(selectedRow, 4);
-            String estado = table.getValueAt(selectedRow, 5).toString();
 
-            if (!estado.equals("*") && !estado.equals("I")) {
+            if (!estado.equals("*") || !estado.equals("I")) {
                 comboArticulo.setSelectedItem(artCod);
                 comboPedido.setSelectedItem(String.valueOf(pedId));
                 spinnerCantidad.setValue(cantidad);

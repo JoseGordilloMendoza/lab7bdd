@@ -16,6 +16,9 @@ public class scooter extends interfazGeneral {
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarComponentes();
         cargarDatos();
+        tablaNombre="scooter";
+        PK="COD_SCO";
+        columns=5;
     }
 
     private void cargarComponentes() {
@@ -108,70 +111,6 @@ public class scooter extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codSco = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("DELETE FROM scooter WHERE COD_SCO = ?")) {
-                pstmt.setInt(1, codSco);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codSco = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE scooter SET ESTADO = 'I' WHERE COD_SCO = ?")) {
-                pstmt.setInt(1, codSco);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para inactivar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codSco = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE scooter SET ESTADO = 'A' WHERE COD_SCO = ?")) {
-                pstmt.setInt(1, codSco);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para reactivar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     @Override
     protected void actualizar() {
         int codSco = (int) tableModel.getValueAt(table.getSelectedRow(), 0);

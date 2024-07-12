@@ -25,6 +25,10 @@ public class pedidoBase extends interfazGeneral {
         cargarComponentes();
         cargarDatos();
                 table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+                
+        tablaNombre="pedido_base";
+        PK="PED_ID";
+        columns=6;
 
     }
 
@@ -176,9 +180,9 @@ public class pedidoBase extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1) {
             int pedId = (int) tableModel.getValueAt(selectedRow, 0);
-            String estado = tableModel.getValueAt(selectedRow, 5).toString();
+            String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
 
-            if (!estado.equals("*")) {
+            if (selectedRow != -1 && estado.equals("A")) {
                 txtCodigo.setText(pedId+"");
                 txtCodigo.setEditable(false);
                 dateChooser.setDate(parseDate(tableModel.getValueAt(selectedRow, 1).toString()));
@@ -196,54 +200,6 @@ public class pedidoBase extends interfazGeneral {
             }
         } else {
             JOptionPane.showMessageDialog(this, "Debe seleccionar un pedido para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int pedId = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizar();
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int pedId = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizar();
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int pedId = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizar();
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
     }
 

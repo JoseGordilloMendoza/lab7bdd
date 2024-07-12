@@ -23,6 +23,9 @@ public class receta_det extends interfazGeneral {
         cargarInstrucciones();
         cargarRecetas();
         cargarDatos();
+        tablaNombre="receta_detalle";
+        PK="COD_REC_DET";
+        columns=6;
     }
 
     private void cargarTipoArticulos() {
@@ -209,46 +212,6 @@ public class receta_det extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 5).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("UPDATE receta_detalle SET ESTADO = '*' WHERE COD_REC_DET = ?")) {
-                    pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 5).toString().equals("A")) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta_detalle SET ESTADO = 'I' WHERE COD_REC_DET = ?")) {
-                pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "Este registro ya está inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede inactivarse", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     @Override
     protected void actualizar() {
         try {
@@ -285,23 +248,4 @@ public class receta_det extends interfazGeneral {
         }
     }
 
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 5).toString().equals("I")) {
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE receta_detalle SET ESTADO = 'A' WHERE COD_REC_DET = ?")) {
-                pstmt.setInt(1, Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString()));
-                pstmt.executeUpdate();
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 4).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "Este registro ya está activo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede reactivarse", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
 }

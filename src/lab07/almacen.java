@@ -14,6 +14,9 @@ public class almacen extends interfazGeneral {
         super("CRUD Almacen Interface", new String[]{"Franquicia"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarFranquicias();
+        tablaNombre="almacen";
+        PK="COD_ALM";
+        columns=3;
     }
 
     private void cargarFranquicias() {
@@ -123,7 +126,9 @@ public class almacen extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
+        String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
+        if (selectedRow != -1 && estado.equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codFran = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodFran.setSelectedItem(codFran);
@@ -135,74 +140,6 @@ public class almacen extends interfazGeneral {
             btnActualizar.setEnabled(true);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                int codAlm = (int) tableModel.getValueAt(selectedRow, 0);
-                try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("DELETE FROM almacen WHERE COD_ALM = ?")) {
-                    pstmt.setInt(1, codAlm);
-                    pstmt.executeUpdate();
-
-                    cargarDatos();
-                    cancelar();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            int codAlm = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET ESTADO = 'I' WHERE COD_ALM = ?")) {
-                pstmt.setInt(1, codAlm);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            int codAlm = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement("UPDATE almacen SET ESTADO = 'A' WHERE COD_ALM = ?")) {
-                pstmt.setInt(1, codAlm);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -228,17 +165,5 @@ public class almacen extends interfazGeneral {
                 JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
-    }
-
-    @Override
-    protected void cancelar() {
-        // Limpiar campos de texto
-        txtCodigo.setText("");
-        comboCodFran.setSelectedIndex(0); // Restablecer la selección del combo box
-        lblEstado.setText("");
-        txtCodigo.setEditable(true);
-        comboCodFran.setEnabled(true);
-        CarFlaAct = 0;
-        btnActualizar.setEnabled(false);
     }
 }

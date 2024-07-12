@@ -15,6 +15,9 @@ public class turno extends interfazGeneral {
         super("CRUD Turno Interface", new String[]{"Inicio Turno", "Fin Turno"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         initializeComponents();
+        tablaNombre="turno";
+        PK="TIP_TUR";
+        columns=4;
     }
 
     private void initializeComponents() {

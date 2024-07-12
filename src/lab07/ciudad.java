@@ -16,6 +16,9 @@ public class ciudad extends interfazGeneral {
         super("CRUD Ciudad Interface", new String[]{"Región", "Nombre"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarRegiones();
+        tablaNombre="ciudad";
+        PK="COD_CIU";
+        columns=4;
     }
 
     private void cargarRegiones() {
@@ -113,7 +116,9 @@ public class ciudad extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
+        String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
+        if (selectedRow != -1 && estado.equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             String codRegi = tableModel.getValueAt(selectedRow, 1).toString();
             comboCodRegi.setSelectedItem(codRegi);
@@ -127,89 +132,6 @@ public class ciudad extends interfazGeneral {
             btnActualizar.setEnabled(true);
         } else {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_CIU", codCiu, "I");
-
-                try (PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = 'I' WHERE COD_CIU = ?")) {
-                    pstmt.setInt(1, codCiu);
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al inactivar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-
-                try (Connection conn = DatabaseConnection.getConnection()) {
-                    actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_CIU", codCiu, "*");
-
-                    try (PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = '*' WHERE COD_CIU = ?")) {
-                        pstmt.setInt(1, codCiu);
-                        pstmt.executeUpdate();
-                        cargarDatos();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        JOptionPane.showMessageDialog(this, "Error al eliminar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            int codCiu = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_CIU", codCiu, "A");
-
-                try (PreparedStatement pstmt = conn.prepareStatement("UPDATE ciudad SET ESTADO = 'A' WHERE COD_CIU = ?")) {
-                    pstmt.setInt(1, codCiu);
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al reactivar la ciudad: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al conectar con la base de datos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
-        } else if (tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

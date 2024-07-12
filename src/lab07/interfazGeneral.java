@@ -28,7 +28,9 @@ public abstract class interfazGeneral extends JFrame {
     protected JPanel[] pnlAtributosExtras;
     protected JLabel[] lblAtributosExtras;
     protected JPanel dataPanel;
-
+    protected String tablaNombre;
+    protected String PK;
+    protected int columns;
     // Fuente global para toda la interfaz
     protected static final Font DEFAULT_FONT = new Font("Oswald", Font.BOLD, 14);
 
@@ -193,11 +195,77 @@ public abstract class interfazGeneral extends JFrame {
 
     protected abstract void modificar();
 
-    protected abstract void eliminar();
+    protected void eliminar() {
+    int selectedRow = table.getSelectedRow();
+    String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+    if (selectedRow != -1) {
+        int cod = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+        
+        if (!estado.equals("*")&& estado.equals("A")) {
+            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+            if (confirmacion == JOptionPane.YES_OPTION) {
+                try (Connection conn = DatabaseConnection.getConnection();
+                     Statement stmt = conn.createStatement()) {
+                    String sql = "UPDATE " + tablaNombre + " SET ESTADO = '*' WHERE " + PK + " = " + cod;
+                    stmt.executeUpdate(sql);
+                    cargarDatos();
+                    cancelar();
+                    JOptionPane.showMessageDialog(this, "Registro eliminado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        } else {
+            JOptionPane.showMessageDialog(this, "Este registro ya está eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    } else {
+        JOptionPane.showMessageDialog(this, "Debe seleccionar un registro activo para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
+    }
+}
 
-    protected abstract void inactivar();
 
-    protected abstract void reactivar();
+    protected void inactivar() {
+            int selectedRow = table.getSelectedRow();
+            String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+            if (selectedRow != -1 && estado.equals("A")) {
+                int cod = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+                try (Connection conn = DatabaseConnection.getConnection();
+                     Statement stmt = conn.createStatement()) {
+                    String sql = "UPDATE " + tablaNombre + " SET ESTADO = 'I' WHERE " + PK + " = " + cod;
+                    stmt.executeUpdate(sql);
+                    cargarDatos();
+                    cancelar();
+                    JOptionPane.showMessageDialog(this, "Registro inactivado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar un registro activo para inactivar.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    protected void reactivar() {
+        
+        int selectedRow = table.getSelectedRow();
+        String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+        if (selectedRow != -1 && estado.equals("I") ) {
+            int cod = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
+            try (Connection conn = DatabaseConnection.getConnection();
+                     Statement stmt = conn.createStatement()) {
+                    String sql = "UPDATE " + tablaNombre + " SET ESTADO = 'A' WHERE " + PK + " = " + cod;
+                    stmt.executeUpdate(sql);
+                    cargarDatos();
+                    cancelar();
+                    JOptionPane.showMessageDialog(this, "Registro reactivado con éxito.", "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+        } else {
+            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro inactivo para activar.", "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     protected abstract void actualizar();
 

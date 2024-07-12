@@ -15,6 +15,9 @@ public class registroScooter extends interfazGeneral {
         super("Registro de Scooters", new String[]{"Repartidor", "Kilometraje Inicio", "Kilometraje Fin", "Factura"});
                 table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarDatosExtra();
+        tablaNombre="articulo";
+        PK="ART_COD";
+        columns=6;
     }
 
     private void cargarDatosExtra() {
@@ -136,81 +139,33 @@ private double getCostoTotalFactura(Connection conn, int codFac) throws SQLExcep
     }
 
     @Override
-protected void modificar() {
-    int selectedRow = table.getSelectedRow();
-    if (selectedRow != -1) {
-        int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
-        String estado = tableModel.getValueAt(selectedRow, 5).toString();
+    protected void modificar() {
+        int selectedRow = table.getSelectedRow();
+                    String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
 
-        if (!estado.equals("*")) {
-            spinKilometrajeInicio.setValue(tableModel.getValueAt(selectedRow, 1));
-            spinKilometrajeFin.setValue(tableModel.getValueAt(selectedRow, 2));
-            txtCodigo.setText(String.valueOf(codRegSco));
-            txtCodigo.setEditable(false);
+        if (selectedRow != -1) {
+            int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
 
-            int codRep = Integer.parseInt(((String) tableModel.getValueAt(selectedRow, 3)).split(" / ")[0]);
-            comboRepartidor.setSelectedItem(String.valueOf(codRep));
+            if (!estado.equals("*")&& estado.equals("A")) {
+                spinKilometrajeInicio.setValue(tableModel.getValueAt(selectedRow, 1));
+                spinKilometrajeFin.setValue(tableModel.getValueAt(selectedRow, 2));
+                txtCodigo.setText(String.valueOf(codRegSco));
+                txtCodigo.setEditable(false);
 
-            int codFac = Integer.parseInt(((String) tableModel.getValueAt(selectedRow, 4)).split(" / ")[0]);
-            comboFactura.setSelectedItem(String.valueOf(codFac));
+                int codRep = Integer.parseInt(((String) tableModel.getValueAt(selectedRow, 3)).split(" / ")[0]);
+                comboRepartidor.setSelectedItem(String.valueOf(codRep));
 
-            lblEstado.setText(estado);
-            operation = "mod";
-            btnActualizar.setEnabled(true);
+                int codFac = Integer.parseInt(((String) tableModel.getValueAt(selectedRow, 4)).split(" / ")[0]);
+                comboFactura.setSelectedItem(String.valueOf(codFac));
+
+                lblEstado.setText(estado);
+                operation = "mod";
+                btnActualizar.setEnabled(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Este registro no puede ser modificado.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede ser modificado.", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    } else {
-        JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codigo = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "registro_scooter", "ESTADO", "COD_REG_SCO", codigo, "*");
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codigo = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "registro_scooter", "ESTADO", "COD_REG_SCO", codigo, "I");
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codigo = (int) tableModel.getValueAt(selectedRow, 0);
-
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "registro_scooter", "ESTADO", "COD_REG_SCO", codigo, "A");
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+            JOptionPane.showMessageDialog(this, "Debe seleccionar un registro para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 

@@ -14,6 +14,9 @@ public class pais extends interfazGeneral {
         // Crear el JTextField para el atributo "Nombre" y agregarlo al panel
         txtNombre = new JTextField();
         addExtraComponent(0, txtNombre);
+        tablaNombre="pais";
+        PK="COD_PAI";
+        columns=3;
     }
 
     @Override
@@ -64,7 +67,9 @@ public class pais extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
+            String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
+
+        if (selectedRow != -1 && estado.equals("A")) {
             txtCodigo.setText(tableModel.getValueAt(selectedRow, 0).toString());
             txtNombre.setText(tableModel.getValueAt(selectedRow, 1).toString());
             lblEstado.setText(tableModel.getValueAt(selectedRow, 2).toString());
@@ -77,67 +82,11 @@ public class pais extends interfazGeneral {
             JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
-            int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "pais", "ESTADO", "COD_PAI", codPai, "I");
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "El registro ya está inactivo o eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 2).toString().equals("I")) {
-            int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "pais", "ESTADO", "COD_PAI", codPai, "A");
-                cargarDatos();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "El registro ya está activo o eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                int codPai = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-                try (Connection conn = DatabaseConnection.getConnection()) {
-                    actualizarEstadoEnCascada(conn, "pais", "ESTADO", "COD_PAI", codPai, "*");
-                    cargarDatos();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar el país: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        } else {
-            JOptionPane.showMessageDialog(this, "El registro ya está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
     @Override
     protected void actualizar() {
-        if (CarFlaAct == 1) {
             String codigo = txtCodigo.getText();
             String nombre = txtNombre.getText();
-            String estado = tableModel.getValueAt(table.getSelectedRow(), 2).toString(); // Assuming the state is in the third column (index 2)
+            String estado = lblEstado.getText(); // Assuming the state is in the third column (index 2)
             try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET NOM_PAI = ?, ESTADO = ? WHERE COD_PAI = ?")) {
                 pstmt.setString(1, nombre);
                 pstmt.setString(2, estado);
@@ -150,7 +99,7 @@ public class pais extends interfazGeneral {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
-        }
+        
     }
 
     @Override

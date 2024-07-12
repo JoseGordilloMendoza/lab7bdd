@@ -17,6 +17,9 @@ public class region extends interfazGeneral {
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         txtNombreRegion = new JTextField();
         cargarPaises();
+        tablaNombre="region";
+        PK="COD_REGI";
+        columns=4;
     }
 
     private void cargarPaises() {
@@ -128,56 +131,6 @@ public class region extends interfazGeneral {
     }
 
     @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && !tableModel.getValueAt(selectedRow, 3).toString().equals("*")) {
-            int confirmacion = JOptionPane.showConfirmDialog(this, "¿Estás seguro de que deseas eliminar este registro?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-            if (confirmacion == JOptionPane.YES_OPTION) {
-                int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-                try (Connection conn = DatabaseConnection.getConnection()) {
-                    actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_REGI", codRegi, "*");
-                    try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM region WHERE COD_REGI = ?")) {
-                        pstmt.setInt(1, codRegi);
-                        pstmt.executeUpdate();
-                        cargarDatos();
-                    }
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al eliminar la región: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            }
-        } else if (selectedRow != -1) {
-            JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("A")) {
-            int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_REGI", codRegi, "I");
-                try (PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = 'I' WHERE COD_REGI = ?")) {
-                    pstmt.setInt(1, codRegi);
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar la región: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1) {
-            String estado = tableModel.getValueAt(selectedRow, 3).toString();
-            if (estado.equals("I")) {
-                JOptionPane.showMessageDialog(this, "El registro ya se encuentra inactivo", "Error", JOptionPane.ERROR_MESSAGE);
-            } else if (estado.equals("*")) {
-                JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
-    @Override
     protected void actualizar() {
         if (CarFlaAct == 1) {
             try {
@@ -212,33 +165,6 @@ public class region extends interfazGeneral {
             }
         }
     }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 3).toString().equals("I")) {
-            int codRegi = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizarEstadoEnCascada(conn, "ciudad", "ESTADO", "COD_REGI", codRegi, "A");
-                try (PreparedStatement pstmt = conn.prepareStatement("UPDATE region SET ESTADO = 'A' WHERE COD_REGI = ?")) {
-                    pstmt.setInt(1, codRegi);
-                    pstmt.executeUpdate();
-                    cargarDatos();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar la región: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } else if (selectedRow != -1) {
-            String estado = tableModel.getValueAt(selectedRow, 3).toString();
-            if (estado.equals("A")) {
-                JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
-            } else if (estado.equals("*")) {
-                JOptionPane.showMessageDialog(this, "El registro está eliminado", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
     @Override
     protected void cancelar() {
         // Limpiar los campos de texto y restablecer estado de componentes

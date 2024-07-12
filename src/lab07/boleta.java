@@ -25,6 +25,9 @@ public class boleta extends interfazGeneral {
         cargarComponentes();
         cargarDatos();
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
+        tablaNombre="boleta";
+        PK="COD_BOL";
+        columns=6;
     }
 
     private void cargarComponentes() {
@@ -154,62 +157,6 @@ public class boleta extends interfazGeneral {
         } else {
             JOptionPane.showMessageDialog(this, "Debe seleccionar una boleta para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-    
-    @Override
-protected void eliminar() {
-    int selectedRow = table.getSelectedRow();
-    if (selectedRow != -1) {
-        int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-        int confirm = JOptionPane.showConfirmDialog(this, "¿Está seguro de que desea eliminar esta boleta?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
-        
-        if (confirm == JOptionPane.YES_OPTION) {
-                lblEstado.setText("*");
-                actualizar();
-                cargarDatos();
-                cancelar();
-            
-        }
-    } else {
-        JOptionPane.showMessageDialog(this, "Debe seleccionar una boleta para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
-    }
-}
-
-    
-    @Override
-    protected void inactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 5).toString().equals("A")) {
-            int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-            lblEstado.setText("*");
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizar();
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        else {
-                JOptionPane.showMessageDialog(this, "Esta boleta no puede ser desactivada.", "Error", JOptionPane.ERROR_MESSAGE);}
-    }
-
-    @Override
-    protected void reactivar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 5).toString().equals("I")) {
-            int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-            lblEstado.setText("*");
-            try (Connection conn = DatabaseConnection.getConnection()) {
-                actualizar();
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        else {
-                JOptionPane.showMessageDialog(this, "Esta boleta no puede ser reactivada.", "Error", JOptionPane.ERROR_MESSAGE);}
     }
 
     @Override
