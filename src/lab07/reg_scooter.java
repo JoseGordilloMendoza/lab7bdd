@@ -90,7 +90,7 @@ public class reg_scooter extends interfazGeneral {
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("A")) {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
             txtCodigo.setText(String.valueOf(codRegSco));
             txtCodigo.setEditable(false);
@@ -101,14 +101,14 @@ public class reg_scooter extends interfazGeneral {
             cbCodFac.setSelectedItem(tableModel.getValueAt(selectedRow, 5));
             btnActualizar.setEnabled(true);
         } else {
-            JOptionPane.showMessageDialog(this, "Selecciona un registro para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Registro no puede modificarse.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     @Override
     protected void eliminar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("A")) {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
             try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE pais SET ESTADO = '*' WHERE COD_PAI = ?")) {
 
@@ -122,12 +122,15 @@ public class reg_scooter extends interfazGeneral {
                 JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+        else {
+                JOptionPane.showMessageDialog(this, "Este artículo no puede ser eliminado.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
     }
 
     @Override
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("A")) {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
             lblEstado.setText("I");
             cargarDatos();
@@ -140,7 +143,7 @@ public class reg_scooter extends interfazGeneral {
     @Override
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 6).toString().equals("I")) {
             int codRegSco = (int) tableModel.getValueAt(selectedRow, 0);
             lblEstado.setText("A");
             cargarDatos();

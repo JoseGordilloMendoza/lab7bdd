@@ -154,6 +154,7 @@ public class tam_art extends interfazGeneral {
                 txtCodigo.setEnabled(true);
                 txtNombre.setEditable(true);
                 btnActualizar.setEnabled(false);
+                cancelar();
             } catch (SQLException e) {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);

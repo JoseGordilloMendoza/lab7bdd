@@ -1,85 +1,87 @@
 package lab07;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.sql.*;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import com.toedter.calendar.JDateChooser;
+import java.awt.BorderLayout;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Date;
+import javax.swing.JComboBox;
+import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
+import javax.swing.JTextField;
 
 public class boleta extends interfazGeneral {
 
-    private JComboBox<Integer> cbCodRegSco;
-    private JComboBox<Integer> cbPedId;
-    private SimpleDateFormat dateFormat;
+    private JDateChooser dateChooser;
+    private JComboBox<String> comboRegSco;
+    private JComboBox<String> comboPedId;
+    private JTextField txtTotal;
 
     public boleta() {
-        super("CRUD Boleta Interface", new String[]{"Fecha Boleta", "Código Registro Scooter", "Pedido ID", "Estado"});
-
-        cbCodRegSco = new JComboBox<>();
-        cbPedId = new JComboBox<>();
-        dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-
-        cargarCodigosRegistroScooter();
-        cargarCodigosPedidosActivos();
-        establecerFechaHoy();
-
-        txtAtributosExtras[1].setLayout(new BorderLayout());
-        txtAtributosExtras[1].add(cbCodRegSco, BorderLayout.CENTER);
-
-        txtAtributosExtras[2].setLayout(new BorderLayout());
-        txtAtributosExtras[2].add(cbPedId, BorderLayout.CENTER);
-
+        super("Gestión de Boletas", new String[]{"Fecha Boleta", "Registro SCO", "Pedido ID", "Total"});
+        cargarComponentes();
         cargarDatos();
+        table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
     }
 
-    private void cargarCodigosRegistroScooter() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_REG_SCO FROM registro_scooter WHERE ESTADO = 'A'")) {
-            cbCodRegSco.removeAllItems();
+    private void cargarComponentes() {
+        dateChooser = new JDateChooser();
+        comboRegSco = new JComboBox<>();
+        comboPedId = new JComboBox<>();
+        txtTotal = new JTextField();
+        txtTotal.setEditable(false);
+
+        // Cargar datos de Registro SCO en el JComboBox
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COD_REG_SCO FROM registro_scooter WHERE ESTADO = 'A'")) {
             while (rs.next()) {
-                int codRegSco = rs.getInt("COD_REG_SCO");
-                cbCodRegSco.addItem(codRegSco);
+                comboRegSco.addItem(rs.getInt("COD_REG_SCO")+"");
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al cargar los códigos de registro scooter: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
 
-    private void cargarCodigosPedidosActivos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT PED_ID FROM pedido_base WHERE ESTADO = 'A'")) {
-            cbPedId.removeAllItems();
+        // Cargar datos de Pedido ID en el JComboBox
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT PED_ID FROM pedido_base WHERE ESTADO = 'A'")) {
             while (rs.next()) {
-                int pedId = rs.getInt("PED_ID");
-                cbPedId.addItem(pedId);
+                comboPedId.addItem(String.valueOf(rs.getInt("PED_ID")));
             }
         } catch (SQLException e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Error al cargar los códigos de pedidos activos: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
+        comboRegSco.addActionListener(e -> actualizarTotal());
+        comboPedId.addActionListener(e -> actualizarTotal());
 
-    private void establecerFechaHoy() {
-        String fechaHoy = dateFormat.format(new Date());
-        txtAtributosExtras[0].setText(fechaHoy);
+        // Agregar componentes a los paneles correspondientes
+        addExtraComponent(0, dateChooser);
+        addExtraComponent(1, comboRegSco);
+        addExtraComponent(2, comboPedId);
+        addExtraComponent(3, txtTotal);
     }
 
     @Override
     protected void cargarDatos() {
-        try (Connection conn = DatabaseConnection.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID, ESTADO FROM boleta")) {
-            tableModel.setRowCount(0);
-            usedCodes.clear();
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID, TOTAL, ESTADO FROM boleta")) {
+            tableModel.setRowCount(0); // Limpiar la tabla antes de cargar datos
             while (rs.next()) {
-                int codBol = rs.getInt("COD_BOL");
-                Date fechBol = rs.getDate("FECH_BOL");
+                // Obtener nombre del registro SCO usando su código
                 int codRegSco = rs.getInt("COD_REG_SCO");
-                int pedId = rs.getInt("PED_ID");
-                String estado = rs.getString("ESTADO");
-
-                usedCodes.add(codBol);
-                tableModel.addRow(new Object[]{codBol, dateFormat.format(fechBol), codRegSco, pedId, estado});
+                tableModel.addRow(new Object[]{
+                    rs.getInt("COD_BOL"),
+                    rs.getString("FECH_BOL"),
+                    codRegSco + "",
+                    rs.getInt("PED_ID"),
+                    rs.getBigDecimal("TOTAL"),
+                    rs.getString("ESTADO")
+                });
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -88,128 +90,227 @@ public class boleta extends interfazGeneral {
 
     @Override
     protected void adicionar() {
-        try {
-            int codBol = generateNextCode("boleta", "COD_BOL");
-            Date fechBol = new SimpleDateFormat("yyyy-MM-dd").parse(txtAtributosExtras[0].getText());
-            int codRegSco = (int) cbCodRegSco.getSelectedItem();
-            int pedId = (int) cbPedId.getSelectedItem();
-            String estado = txtAtributosExtras[3].getText();
+        int codBol = Integer.parseInt(txtCodigo.getText());
+        String fechaBoleta = formatDate(dateChooser.getDate());
+        String regScoItem = (String) comboRegSco.getSelectedItem();
+        int codRegSco = Integer.parseInt(regScoItem.split(" / ")[0]);
+        int pedId = Integer.parseInt((String) comboPedId.getSelectedItem());
+        String estado = "A";
+        double total = calcularTotal(codRegSco, pedId);
 
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO boleta (COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID, ESTADO) VALUES (?, ?, ?, ?, ?)")) {
-                pstmt.setInt(1, codBol);
-                pstmt.setDate(2, new java.sql.Date(fechBol.getTime()));
-                pstmt.setInt(3, codRegSco);
-                pstmt.setInt(4, pedId);
-                pstmt.setString(5, estado);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al insertar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        // Comprobar si el pedido ya tiene una boleta
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement checkStmt = conn.prepareStatement("SELECT COUNT(*) FROM boleta WHERE PED_ID = ? AND ESTADO = 'A'")) {
+            checkStmt.setInt(1, pedId);
+            ResultSet checkRs = checkStmt.executeQuery();
+            if (checkRs.next() && checkRs.getInt(1) > 0) {
+                JOptionPane.showMessageDialog(this, "Este pedido ya tiene una boleta activa.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
-        } catch (NumberFormatException | ParseException e) {
-            JOptionPane.showMessageDialog(this, "Código de boleta o datos inválidos.", "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO boleta (COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID, TOTAL, ESTADO) VALUES (?, ?, ?, ?, ?, ?)")) {
+            pstmt.setInt(1, codBol);
+            pstmt.setString(2, fechaBoleta);
+            pstmt.setInt(3, codRegSco);
+            pstmt.setInt(4, pedId);
+            pstmt.setDouble(5, total);
+            pstmt.setString(6, estado);
+            pstmt.executeUpdate();
+            cargarDatos();
+            cancelar();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
+
 
     @Override
     protected void modificar() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1) {
             int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-            txtCodigo.setText(String.valueOf(codBol));
-            txtCodigo.setEditable(false);
-            txtAtributosExtras[0].setText(tableModel.getValueAt(selectedRow, 1).toString());
-            cbCodRegSco.setSelectedItem(tableModel.getValueAt(selectedRow, 2));
-            cbPedId.setSelectedItem(tableModel.getValueAt(selectedRow, 3));
-            txtAtributosExtras[3].setText(tableModel.getValueAt(selectedRow, 4).toString());
-            btnActualizar.setEnabled(true);
+            String estado = tableModel.getValueAt(selectedRow, 5).toString();
+
+            if (!estado.equals("*") && !estado.equals("I")) {
+                txtCodigo.setText(codBol + "");
+                txtCodigo.setEditable(false);
+                dateChooser.setDate(parseDate(tableModel.getValueAt(selectedRow, 1).toString()));
+                int codRegSco = Integer.parseInt(((String) tableModel.getValueAt(selectedRow, 2)).split(" / ")[0]);
+                comboRegSco.setSelectedItem(getComboItemText(codRegSco, comboRegSco));
+                int pedId = (int) tableModel.getValueAt(selectedRow, 3);
+                comboPedId.setSelectedItem(String.valueOf(pedId));
+                txtTotal.setText(tableModel.getValueAt(selectedRow, 4).toString());
+                lblEstado.setText(estado);
+                actualizarTotal();
+                operation = "mod";
+                btnActualizar.setEnabled(true);
+            } else {
+                JOptionPane.showMessageDialog(this, "Esta boleta no puede ser modificada.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
         } else {
-            JOptionPane.showMessageDialog(this, "Este registro no puede editarse.", "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Debe seleccionar una boleta para modificar.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
+    
     @Override
-    protected void eliminar() {
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
-            int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("DELETE FROM boleta WHERE COD_BOL = ?")) {
-                pstmt.setInt(1, codBol);
-                pstmt.executeUpdate();
-
+protected void eliminar() {
+    int selectedRow = table.getSelectedRow();
+    if (selectedRow != -1) {
+        int codBol = (int) tableModel.getValueAt(selectedRow, 0);
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Está seguro de que desea eliminar esta boleta?", "Confirmar eliminación", JOptionPane.YES_NO_OPTION);
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+                lblEstado.setText("*");
+                actualizar();
                 cargarDatos();
                 cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al eliminar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            
         }
+    } else {
+        JOptionPane.showMessageDialog(this, "Debe seleccionar una boleta para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
     }
+}
 
+    
     @Override
     protected void inactivar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 5).toString().equals("A")) {
             int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE boleta SET ESTADO = 'I' WHERE COD_BOL = ?")) {
-                pstmt.setInt(1, codBol);
-                pstmt.executeUpdate();
-
+            lblEstado.setText("*");
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                actualizar();
                 cargarDatos();
                 cancelar();
             } catch (SQLException e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al inactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+        else {
+                JOptionPane.showMessageDialog(this, "Esta boleta no puede ser desactivada.", "Error", JOptionPane.ERROR_MESSAGE);}
     }
 
     @Override
     protected void reactivar() {
         int selectedRow = table.getSelectedRow();
-        if (selectedRow != -1) {
+        if (selectedRow != -1 && tableModel.getValueAt(selectedRow, 5).toString().equals("I")) {
             int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE boleta SET ESTADO = 'A' WHERE COD_BOL = ?")) {
-                pstmt.setInt(1, codBol);
-                pstmt.executeUpdate();
-
+            lblEstado.setText("*");
+            try (Connection conn = DatabaseConnection.getConnection()) {
+                actualizar();
                 cargarDatos();
                 cancelar();
             } catch (SQLException e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al reactivar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+        else {
+                JOptionPane.showMessageDialog(this, "Esta boleta no puede ser reactivada.", "Error", JOptionPane.ERROR_MESSAGE);}
+    }
+
+    @Override
+    protected void cancelar() {
+        super.cancelar();
+        dateChooser.setDate(null);
+        comboRegSco.setSelectedIndex(0);
+        comboPedId.setSelectedIndex(0);
+        txtTotal.setText("");
+    }
+
+    private String formatDate(Date date) {
+        if (date != null) {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            return sdf.format(date);
+        }
+        return null;
+    }
+
+    private Date parseDate(String date) {
+        try {
+            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd");
+            return sdf.parse(date);
+        } catch (java.text.ParseException ex) {
+            return null;
+        }
+    }
+
+    private String getComboItemText(int id, JComboBox<String> combo) {
+        for (int i = 0; i < combo.getItemCount(); i++) {
+            String item = combo.getItemAt(i);
+            if (item.startsWith(String.valueOf(id))) {
+                return item;
+            }
+        }
+        return null;
+    }
+
+    private double calcularTotal(int codRegSco, int pedId) {
+        double total = 0;
+
+        try (Connection conn = DatabaseConnection.getConnection()) {
+            // Calcular la suma de los subtotales de los artículos del pedido
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "SELECT SUM(SUBTOTAL) AS TOTAL_PEDIDO FROM pedido_art WHERE PED_ID = ? AND ESTADO = 'A'")) {
+                pstmt.setInt(1, pedId);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    total = rs.getDouble("TOTAL_PEDIDO");
+                }
+            }
+
+            // Obtener el 10% del costo total de la factura correspondiente al código de registro SCO
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "SELECT fg.COST_TOT FROM factura_gasolinera fg " +
+                    "JOIN registro_scooter rs ON fg.COD_FAC = rs.COD_FAC " +
+                    "WHERE rs.COD_REG_SCO = ? AND fg.ESTADO = 'A' AND rs.ESTADO = 'A'")) {
+                pstmt.setInt(1, codRegSco);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    total += rs.getDouble("COST_TOT") * 0.1;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return total;
     }
 
     @Override
     protected void actualizar() {
-        try {
-            int codBol = Integer.parseInt(txtCodigo.getText());
-            Date fechBol = new SimpleDateFormat("yyyy-MM-dd").parse(txtAtributosExtras[0].getText());
-            int codRegSco = (int) cbCodRegSco.getSelectedItem();
-            int pedId = (int) cbPedId.getSelectedItem();
-            String estado = txtAtributosExtras[3].getText();
+        int codBol = Integer.parseInt(txtCodigo.getText());
+        String fechaBoleta = formatDate(dateChooser.getDate());
+        String regScoItem = (String) comboRegSco.getSelectedItem();
+        int codRegSco = Integer.parseInt(regScoItem.split(" / ")[0]);
+        int pedId = Integer.parseInt((String) comboPedId.getSelectedItem());
+        String estado = lblEstado.getText();
+        double total = calcularTotal(codRegSco, pedId);
 
-            try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE boleta SET FECH_BOL = ?, COD_REG_SCO = ?, PED_ID = ?, ESTADO = ? WHERE COD_BOL = ?")) {
-                pstmt.setDate(1, new java.sql.Date(fechBol.getTime()));
-                pstmt.setInt(2, codRegSco);
-                pstmt.setInt(3, pedId);
-                pstmt.setString(4, estado);
-                pstmt.setInt(5, codBol);
-                pstmt.executeUpdate();
-
-                cargarDatos();
-                cancelar();
-            } catch (SQLException e) {
-                e.printStackTrace();
-                JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        } catch (NumberFormatException | ParseException e) {
-            JOptionPane.showMessageDialog(this, "Código de boleta o datos inválidos.", "Error", JOptionPane.ERROR_MESSAGE);
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement("UPDATE boleta SET FECH_BOL = ?, COD_REG_SCO = ?, PED_ID = ?, TOTAL = ?, ESTADO = ? WHERE COD_BOL = ?")) {
+            pstmt.setString(1, fechaBoleta);
+            pstmt.setInt(2, codRegSco);
+            pstmt.setInt(3, pedId);
+            pstmt.setDouble(4, total);
+            pstmt.setString(5, estado);
+            pstmt.setInt(6, codBol);
+            pstmt.executeUpdate();
+            cargarDatos();
+            cancelar();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    private void actualizarTotal() {
+        if (comboRegSco.getSelectedItem() != null && comboPedId.getSelectedItem() != null) {
+            int codRegSco = Integer.parseInt(((String) comboRegSco.getSelectedItem()).split(" / ")[0]);
+            int pedId = Integer.parseInt((String) comboPedId.getSelectedItem());
+            double total = calcularTotal(codRegSco, pedId);
+            txtTotal.setText(String.format("%.2f", total));
         }
     }
 }

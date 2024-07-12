@@ -14,10 +14,10 @@ public class CRUDInterface extends JFrame {
 
         JPanel selectorPanel = new JPanel();
         selectorPanel.add(new JLabel("Selecciona la tabla:"));
-        tableSelector = new JComboBox<>(new String[]{"pais", "tamaño_del_articulo",
+        tableSelector = new JComboBox<>(new String[]{"articulo", "Pedido Articulos" , "Pedidos Base","pais","boleta", "tamaño_del_articulo",
             "procedencia_de_pedido", "tipo_de_regalo", "turno", "cliente", "region", "tipo_de_articulo",
-            "ingrediente", "receta",
-            "franquicia", "localidad", "ciudad", "almacen", "ingrediente Almacen", "regalos Almacen"});
+            "ingrediente", "receta_detalle","receta","scooter","factura Gasolinera",
+            "franquicia", "localidad", "ciudad", "almacen", "ingrediente Almacen", "regalo", "registro_Scooter", "repartidor"});
         selectorPanel.add(tableSelector);
         add(selectorPanel, BorderLayout.CENTER);
 
@@ -70,8 +70,26 @@ public class CRUDInterface extends JFrame {
         String selectedTable = (String) tableSelector.getSelectedItem();
         if (selectedTable != null) {
             switch (selectedTable) {
+                case "articulo":
+                    new articulo();
+                    break;
+                case "Pedido Articulos":
+                    new pedidoArticulos();
+                    break;
+                case "Pedidos Base":
+                    new pedidoBase();
+                    break;
+                case "boleta":
+                    new boleta();
+                    break;
                 case "pais":
                     new pais();
+                    break;
+                case "registro_Scooter":
+                    new registroScooter();
+                    break;
+                case "repartidor":
+                    new repartidor();
                     break;
                 case "tamaño_del_articulo":
                     new tam_art();
@@ -106,8 +124,14 @@ public class CRUDInterface extends JFrame {
                 case "ingrediente Almacen":
                     new ingredienteAlmacen();
                     break;
-                case "regalos Almacen":
+                case "regalo Almacen":
                     new regaloAlmacen();
+                    break;
+                case "factura Gasolinera":
+                    new facturaGas();
+                    break;
+                case "regalo":
+                    new regalo();
                     break;
                 case "tipo_de_articulo":
                     new tip_art();
@@ -115,8 +139,14 @@ public class CRUDInterface extends JFrame {
                 case "ingrediente":
                     new ingrediente();
                     break;
+                case "receta_detalle":
+                    new receta_det();
+                    break;
                 case "receta":
                     new receta();
+                    break;
+                case "scooter":
+                    new scooter();
                     break;
                 default:
                     JOptionPane.showMessageDialog(this, "Tabla no reconocida", "Error", JOptionPane.ERROR_MESSAGE);

@@ -133,7 +133,7 @@ public class franquicia extends interfazGeneral {
                         btnActualizar.setEnabled(true);
                         actualizar();
 
-                        actualizarEstado("almacen", "ESTADO", "COD_FRAN", codFran, "*", "*");
+                        
                     } else {
                         JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
                     }
@@ -163,8 +163,8 @@ public class franquicia extends interfazGeneral {
                     btnActualizar.setEnabled(true);
                     actualizar();
 
-                    actualizarEstado("almacen", "ESTADO", "COD_FRAN", codFran, "I", "*");
 
+                    
                 } else {
                     JOptionPane.showMessageDialog(this, "No se ha seleccionado una localidad válida.", "Error", JOptionPane.ERROR_MESSAGE);
                 }
@@ -197,8 +197,8 @@ public class franquicia extends interfazGeneral {
                     actualizar();
 
                     // Actualizar estado de almacenes relacionados
-                    actualizarEstado("almacen", "ESTADO", "COD_FRAN", Integer.parseInt(txtCodigo.getText()), "A", "I");
-
+                    
+                   
                 } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("A")) {
                     JOptionPane.showMessageDialog(this, "El registro ya se encuentra activo", "Error", JOptionPane.ERROR_MESSAGE);
                 } else if (tableModel.getValueAt(selectedRow, 2).toString().equals("*")) {

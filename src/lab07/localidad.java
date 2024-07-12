@@ -138,9 +138,6 @@ public class localidad extends interfazGeneral {
                 int codLoc = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
                 String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
                 String nomLoc = tableModel.getValueAt(selectedRow, 2).toString();
-
-                actualizarEstado("franquicia", "ESTADO", "COD_LOC", codLoc, "*", "*");
-
                 try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET ESTADO = '*' WHERE COD_LOC = ?")) {
                     pstmt.setInt(1, codLoc);
                     pstmt.executeUpdate();
@@ -162,9 +159,6 @@ public class localidad extends interfazGeneral {
             int codLoc = Integer.parseInt(tableModel.getValueAt(selectedRow, 0).toString());
             String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
             String nomLoc = tableModel.getValueAt(selectedRow, 2).toString();
-
-            actualizarEstado("franquicia", "ESTADO", "COD_LOC", codLoc, "I", "*");
-
             try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET ESTADO = 'I' WHERE COD_LOC = ?")) {
                 pstmt.setInt(1, codLoc);
                 pstmt.executeUpdate();
@@ -190,7 +184,6 @@ public class localidad extends interfazGeneral {
             String codCiu = tableModel.getValueAt(selectedRow, 1).toString();
             String nomLoc = tableModel.getValueAt(selectedRow, 2).toString();
 
-            actualizarEstado("franquicia", "ESTADO", "COD_LOC", codLoc, "A", "*");
 
             try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET ESTADO = 'A' WHERE COD_LOC = ?")) {
                 pstmt.setInt(1, codLoc);
@@ -211,58 +204,45 @@ public class localidad extends interfazGeneral {
 
     @Override
     protected void actualizar() {
-        if (CarFlaAct == 1) {
-            try {
-                int codLoc = Integer.parseInt(txtCodigo.getText());
-                String selectedItem = (String) comboCodCiu.getSelectedItem();
-                int codCiu = Integer.parseInt(selectedItem.split(" / ")[0]);
-                String nomLoc = txtNomLoc.getText();
-                String estado = lblEstado.getText();
+        try {
+            String selectedItem = (String) comboCodCiu.getSelectedItem();
+            int codCiu = Integer.parseInt(selectedItem.split(" / ")[0]);
+            int codLoc = Integer.parseInt(txtCodigo.getText());
+            String nomLoc = txtNomLoc.getText();
+            String estado = lblEstado.getText();
 
-                if (isDuplicateName(nomLoc, "localidad", "NOM_LOC")) {
-                    JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
-                    return;
-                }
-
-                try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET COD_CIU = ?, NOM_LOC = ? WHERE COD_LOC = ?")) {
-                    pstmt.setInt(1, codCiu);
-                    pstmt.setString(2, nomLoc);
-                    pstmt.setInt(3, codLoc);
-                    pstmt.executeUpdate();
-
-                    cargarDatos();
-                    cancelar();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-                }
-            } catch (NumberFormatException e) {
-                JOptionPane.showMessageDialog(this, "Código de localidad inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+            if (isDuplicateName(nomLoc, "localidad", "NOM_LOC")) {
+                JOptionPane.showMessageDialog(this, "El nombre ya existe.", "Error", JOptionPane.ERROR_MESSAGE);
+                return;
             }
+
+            try (Connection conn = DatabaseConnection.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement("UPDATE localidad SET COD_CIU = ?, NOM_LOC = ? WHERE COD_LOC = ?")) {
+                pstmt.setInt(1, codCiu);
+                pstmt.setString(2, nomLoc);
+                pstmt.setInt(3, codLoc);
+                pstmt.executeUpdate();
+
+                cargarDatos();
+                cancelar();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Error al actualizar el registro: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Código de localidad inválido.", "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     @Override
     protected void cancelar() {
-        
         comboCodCiu.setSelectedIndex(0);
         txtNomLoc.setText("");
+        lblEstado.setText("A");
+        txtCodigo.setEditable(true);
         comboCodCiu.setEnabled(true);
         txtNomLoc.setEditable(true);
-        txtCodigo.setText("");
-        txtCodigo.setEditable(true);
-        
-        lblEstado.setText("");
-
-            // Deseleccionar cualquier fila en la tabla
-        table.clearSelection();
-        btnAdicionar.setEnabled(true);
-        btnModificar.setEnabled(false);
-        btnEliminar.setEnabled(false);
-        btnInactivar.setEnabled(false);
-        btnReactivar.setEnabled(false);
         btnActualizar.setEnabled(false);
-
-            cargarDatos();
+        operation = "add";
     }
 }

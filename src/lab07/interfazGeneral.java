@@ -1,5 +1,8 @@
 package lab07;
-
+import java.util.Date;
+import javax.swing.JSpinner;
+import javax.swing.SpinnerDateModel;
+import javax.swing.JSpinner.DateEditor;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -199,33 +202,53 @@ public abstract class interfazGeneral extends JFrame {
     protected abstract void actualizar();
 
     protected void cancelar() {
-        // Limpiar campos de texto
-        txtCodigo.setText("");
-        for (JPanel pnlAtributoExtra : pnlAtributosExtras) {
-            pnlAtributoExtra.removeAll();
-            pnlAtributoExtra.revalidate();
-            pnlAtributoExtra.repaint();
-        }
-        lblEstado.setText("");
+    // Limpiar campos de texto y etiquetas generales
+    txtCodigo.setText("");
+    lblEstado.setText("");
 
-        // Deseleccionar cualquier fila en la tabla
-        table.clearSelection();
+    // Deseleccionar cualquier fila en la tabla
+    table.clearSelection();
 
-        // Restablecer la configuración inicial de los botones y campos de texto
-        txtCodigo.setEditable(true);
-        for (JPanel pnlAtributoExtra : pnlAtributosExtras) {
-            pnlAtributoExtra.setEnabled(true);
-        }
+    // Restablecer la configuración inicial de los botones y campos de texto
+    txtCodigo.setEditable(true);
 
-        btnAdicionar.setEnabled(true);
-        btnModificar.setEnabled(false);
-        btnEliminar.setEnabled(false);
-        btnInactivar.setEnabled(false);
-        btnReactivar.setEnabled(false);
-        btnActualizar.setEnabled(false);
-        cargarDatos();
-        cargarDatos();
+    for (JPanel pnlAtributoExtra : pnlAtributosExtras) {
+        resetPanelComponents(pnlAtributoExtra); // Restablecer componentes del panel
     }
+
+    btnAdicionar.setEnabled(true);
+    btnModificar.setEnabled(false);
+    btnEliminar.setEnabled(false);
+    btnInactivar.setEnabled(false);
+    btnReactivar.setEnabled(false);
+    btnActualizar.setEnabled(false);
+
+    // Cargar los datos nuevamente
+    cargarDatos();
+}
+
+private void resetPanelComponents(JPanel panel) {
+    Component[] components = panel.getComponents();
+    for (Component component : components) {
+        if (component instanceof JTextField) {
+            ((JTextField) component).setText("");
+        } else if (component instanceof JComboBox) {
+            ((JComboBox<?>) component).setSelectedIndex(0); // Resetear ComboBox
+        } else if (component instanceof JSpinner) {
+            JSpinner spinner = (JSpinner) component;
+            Object editor = spinner.getEditor();
+            if (editor instanceof JSpinner.DateEditor) {
+                ((JSpinner.DateEditor) editor).getTextField().setText(""); // Reiniciar texto del editor de fecha
+                spinner.setValue(new Date()); // Establecer el valor predeterminado como la fecha actual, ajusta según tus necesidades
+            } else {
+                spinner.setValue(0); // Reiniciar al valor predeterminado, ajusta según el tipo de spinner que tengas
+            }
+        }
+        // Puedes agregar más condiciones según los tipos de componentes que tengas
+    }
+}
+
+
 
     protected void salir() {
         dispose();
@@ -306,7 +329,7 @@ public abstract class interfazGeneral extends JFrame {
         }
     }
 
-    private void actualizarEstado(Connection conn, String tabla, String columnaEstado, String columnaCodigo, int codigo, String nuevoEstado) throws SQLException {
+    protected void actualizarEstado(Connection conn, String tabla, String columnaEstado, String columnaCodigo, int codigo, String nuevoEstado) throws SQLException {
         String sql = "UPDATE " + tabla + " SET " + columnaEstado + " = ? WHERE " + columnaCodigo + " = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, nuevoEstado);
@@ -316,7 +339,7 @@ public abstract class interfazGeneral extends JFrame {
         }
     }
 
-    private ArrayList<String> obtenerTablasRelacionadas(Connection conn, String tablaPrincipal) throws SQLException {
+    protected ArrayList<String> obtenerTablasRelacionadas(Connection conn, String tablaPrincipal) throws SQLException {
         ArrayList<String> tablasRelacionadas = new ArrayList<>();
         // Lógica para obtener las tablas relacionadas a la tablaPrincipal
         // Por ejemplo, consultar metadatos de la base de datos para encontrar relaciones
@@ -330,7 +353,7 @@ public abstract class interfazGeneral extends JFrame {
         return tablasRelacionadas;
     }
 
-    private ArrayList<Integer> obtenerCodigosRelacionados(Connection conn, String tabla, String columnaCodigo, int codigo) throws SQLException {
+    protected ArrayList<Integer> obtenerCodigosRelacionados(Connection conn, String tabla, String columnaCodigo, int codigo) throws SQLException {
         ArrayList<Integer> codigosRelacionados = new ArrayList<>();
         String sql = "SELECT " + columnaCodigo + " FROM " + tabla + " WHERE " + columnaCodigo + " = ?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
