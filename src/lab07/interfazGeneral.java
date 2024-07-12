@@ -11,8 +11,12 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import javax.swing.plaf.FontUIResource;
+   import javax.swing.text.DocumentFilter;
+    import javax.swing.text.AttributeSet;
+    import javax.swing.text.BadLocationException;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.text.AbstractDocument;
 
 public abstract class interfazGeneral extends JFrame {
 
@@ -40,6 +44,8 @@ public abstract class interfazGeneral extends JFrame {
         dataPanel = new JPanel(new GridLayout(2 + attributeNames.length, 2));
         dataPanel.add(new JLabel("Código:"));
         txtCodigo = new JTextField("");
+        ((AbstractDocument) txtCodigo.getDocument()).setDocumentFilter(new NumericDocumentFilter()); // Aplicar filtro numérico
+        dataPanel.add(txtCodigo);
         dataPanel.add(txtCodigo);
         txtCodigo.setEditable(true);
 
@@ -434,5 +440,28 @@ private void resetPanelComponents(JPanel panel) {
         System.out.println("Obteniendo códigos relacionados para tabla: " + tabla + ", columna: " + columnaCodigo + ", con código: " + codigo);
         return codigosRelacionados;
     }
+
+
+    class NumericDocumentFilter extends DocumentFilter {
+        @Override
+        public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+            if (string != null && string.matches("\\d*")) {
+                super.insertString(fb, offset, string, attr);
+            }
+        }
+
+        @Override
+        public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+            if (text != null && text.matches("\\d*")) {
+                super.replace(fb, offset, length, text, attrs);
+            }
+        }
+
+        @Override
+        public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+            super.remove(fb, offset, length);
+        }
+    }
+    
 
 }

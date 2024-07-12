@@ -38,7 +38,6 @@ public class CRUDInterface extends JFrame {
         model.addElement("ciudad");
         model.addElement("almacen");
         model.addElement("ingredienteAlmacen");
-        model.addElement("regaloAlmacen");
         model.addElement("facturaGas");
         model.addElement("regalo");
         model.addElement("tip_art");

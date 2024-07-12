@@ -17,6 +17,7 @@ public class pais extends interfazGeneral {
         tablaNombre="pais";
         PK="COD_PAI";
         columns=3;
+        txtCodigo.setText(generateNextCode("pais", "COD_PAI")+"");
     }
 
     @Override
@@ -49,7 +50,7 @@ public class pais extends interfazGeneral {
         }
 
         int codigo = generateNextCode("pais", "COD_PAI");
-
+        
         try (Connection conn = DatabaseConnection.getConnection(); PreparedStatement pstmt = conn.prepareStatement("INSERT INTO pais (COD_PAI, NOM_PAI, ESTADO) VALUES (?, ?, ?)")) {
             pstmt.setInt(1, codigo);
             pstmt.setString(2, nombre);
