@@ -14,7 +14,7 @@ public class repartidor extends interfazGeneral {
         super("Gestión de Repartidores", new String[]{"Nombre", "Scooter", "Turno"});
         table.setDefaultRenderer(Object.class, new CustomTableCellRenderer());
         cargarDatosExtra();
-        tablaNombre="repartidord";
+        tablaNombre="repartidor";
         PK="COD_REP";
         columns=5;
     }

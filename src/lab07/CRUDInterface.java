@@ -6,49 +6,36 @@ import java.awt.event.*;
 
 public class CRUDInterface extends JFrame {
 
+    private JComboBox<Object> categorySelector;
     private JComboBox<Object> tableSelector;
+    private JLabel titleLabel;
 
     public CRUDInterface() {
+        
         setTitle("Seleccionar Tabla");
         setLayout(new BorderLayout());
-
-        JPanel selectorPanel = new JPanel();
-        selectorPanel.add(new JLabel("Selecciona la tabla:"));
-
-        // Crear categorías de tablas
-        DefaultComboBoxModel<Object> model = new DefaultComboBoxModel<>();
+        setSize(400, 300);
         
+        titleLabel = new JLabel("Editor de tablas", SwingConstants.CENTER);
+        titleLabel.setFont(new Font("Arial Black", Font.PLAIN, 18));
+        add(titleLabel, BorderLayout.NORTH);
 
-        // Agregar tablas relacionadas a cada categoría
-        model.addElement("articulo");
-        model.addElement("pedidoArticulos");
-        model.addElement("pedidoBase");
-        model.addElement("boleta");
-        model.addElement("pais");
-        model.addElement("registroScooter");
-        model.addElement("repartidor");
-        model.addElement("tamaño_del_articulo");
-        model.addElement("procedencia_de_pedido");
-        model.addElement("tipo_de_regalo");
-        model.addElement("turno");
-        model.addElement("cliente");
-        model.addElement("region");
-        model.addElement("franquicia");
-        model.addElement("localidad");
-        model.addElement("ciudad");
-        model.addElement("almacen");
-        model.addElement("ingredienteAlmacen");
-        model.addElement("facturaGas");
-        model.addElement("regalo");
-        model.addElement("tip_art");
-        model.addElement("ingrediente");
-        model.addElement("receta_det");
-        model.addElement("receta");
-        model.addElement("scooter");
+        
+        JPanel selectorPanel = new JPanel();
+        selectorPanel.setLayout(new GridLayout(3, 1)); 
 
-        tableSelector = new JComboBox<>(model);
-        tableSelector.setRenderer(new ComboBoxRenderer());
+        selectorPanel.add(new JLabel("Selecciona la categoría:"));
+
+        // Crear y agregar categorías al JComboBox
+        String[] categories = {"Artículos", "Pedidos", "Gestion", "Ubicaciones", "Almacenes e insumos", "Otros"};
+        categorySelector = new JComboBox<>(categories);
+        categorySelector.addActionListener(e -> updateTableSelector());
+        selectorPanel.add(categorySelector);
+
+        selectorPanel.add(new JLabel("Selecciona la tabla:"));
+        tableSelector = new JComboBox<>();
         selectorPanel.add(tableSelector);
+
         add(selectorPanel, BorderLayout.CENTER);
 
         JButton btnSeleccionar = new JButton("Seleccionar");
@@ -56,46 +43,59 @@ public class CRUDInterface extends JFrame {
         add(btnSeleccionar, BorderLayout.SOUTH);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(300, 200);
+        setSize(500, 400);
         setVisible(true);
 
         // Aplicar la fuente predeterminada a toda la interfaz
         applyDefaultFont();
+        updateTableSelector(); // Inicializar tablas
     }
 
-    private void applyDefaultFont() {
-        Font defaultFont = new Font("Arial", Font.PLAIN, 12);
-
-        // Aplicar la fuente a todos los componentes
-        Component[] components = getContentPane().getComponents();
-        for (Component component : components) {
-            if (component instanceof JPanel) {
-                JPanel panel = (JPanel) component;
-                applyFontToPanel(panel, defaultFont);
-            } else if (component instanceof JButton) {
-                JButton button = (JButton) component;
-                button.setFont(defaultFont);
-            } else if (component instanceof JLabel) {
-                JLabel label = (JLabel) component;
-                label.setFont(defaultFont);
-            } else if (component instanceof JComboBox) {
-                JComboBox<?> comboBox = (JComboBox<?>) component;
-                comboBox.setFont(defaultFont);
-            }
+    private void updateTableSelector() {
+        String selectedCategory = (String) categorySelector.getSelectedItem();
+        DefaultComboBoxModel<Object> model = new DefaultComboBoxModel<>();
+        switch (selectedCategory) {
+            case "Artículos":
+                model.addElement("articulo");
+                model.addElement("tamaño Articulo");
+                model.addElement("tipo Articulo");
+                break;
+            case "Pedidos":
+                model.addElement("pedidoArticulos");
+                model.addElement("pedidoBase");
+                break;
+            case "Gestion":
+                model.addElement("boleta");
+                model.addElement("facturaGas");
+                model.addElement("registroScooter");
+                model.addElement("repartidor");
+                break;
+            case "Ubicaciones":
+                model.addElement("pais");
+                model.addElement("region");
+                model.addElement("franquicia");
+                model.addElement("localidad");
+                model.addElement("ciudad");
+                break;
+            case "Almacenes e insumos":
+                model.addElement("almacen");
+                model.addElement("ingredienteAlmacen");
+                model.addElement("ingrediente");
+                break;
+            case "Otros":
+                model.addElement("cliente");
+                model.addElement("tipo_de_regalo");
+                model.addElement("turno");
+                model.addElement("regalo");
+                model.addElement("receta_det");
+                model.addElement("receta");
+                model.addElement("scooter");
+                break;
         }
+        tableSelector.setModel(model);
     }
 
-    private void applyFontToPanel(JPanel panel, Font font) {
-        Component[] components = panel.getComponents();
-        for (Component component : components) {
-            if (component instanceof JPanel) {
-                applyFontToPanel((JPanel) component, font);
-            } else {
-                component.setFont(font);
-            }
-        }
-    }
-
+// Actualizar el método seleccionarTabla
     private void seleccionarTabla() {
         Object selectedItem = tableSelector.getSelectedItem();
         if (selectedItem != null && selectedItem instanceof String) {
@@ -122,7 +122,7 @@ public class CRUDInterface extends JFrame {
                 case "repartidor":
                     new repartidor();
                     break;
-                case "tamaño_del_articulo":
+                case "tamaño Articulo":
                     new tam_art();
                     break;
                 case "procedencia_de_pedido":
@@ -155,16 +155,13 @@ public class CRUDInterface extends JFrame {
                 case "ingredienteAlmacen":
                     new ingredienteAlmacen();
                     break;
-                case "regaloAlmacen":
-                    new regaloAlmacen();
-                    break;
                 case "facturaGas":
                     new facturaGas();
                     break;
                 case "regalo":
                     new regalo();
                     break;
-                case "tip_art":
+                case "tipo Articulo":
                     new tip_art();
                     break;
                 case "ingrediente":
@@ -185,23 +182,58 @@ public class CRUDInterface extends JFrame {
         }
     }
 
+    private void applyDefaultFont() {
+        Font defaultFont = new Font("Arial Black", Font.PLAIN, 12);
+
+        // Aplicar la fuente a todos los componentes
+        Component[] components = getContentPane().getComponents();
+        for (Component component : components) {
+            if (component instanceof JPanel) {
+                JPanel panel = (JPanel) component;
+                applyFontToPanel(panel, defaultFont);
+            } else if (component instanceof JButton) {
+                JButton button = (JButton) component;
+                button.setFont(defaultFont);
+            } else if (component instanceof JLabel) {
+                JLabel label = (JLabel) component;
+                label.setFont(defaultFont);
+            } else if (component instanceof JComboBox) {
+                JComboBox<?> comboBox = (JComboBox<?>) component;
+                comboBox.setFont(defaultFont);
+            }
+        }
+    }
+
+    private void applyFontToPanel(JPanel panel, Font font) {
+        Component[] components = panel.getComponents();
+        for (Component component : components) {
+            if (component instanceof JPanel) {
+                applyFontToPanel((JPanel) component, font);
+            } else {
+                component.setFont(font);
+            }
+        }
+    }    
+    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(CRUDInterface::new);
     }
 
-    // Renderer personalizado para el JComboBox
     private static class ComboBoxRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (value instanceof String) {
                 String text = (String) value;
                 if (text.equals("Artículos") || text.equals("Pedidos") || text.equals("Clientes") ||
                     text.equals("Registros") || text.equals("Ubicaciones") || text.equals("Almacenes") ||
                     text.equals("Otros")) {
                     setFont(getFont().deriveFont(Font.BOLD));
+                    setBackground(Color.LIGHT_GRAY);
                 } else {
                     setFont(getFont().deriveFont(Font.PLAIN));
+                    setBackground(list.getBackground());
                 }
-                setText(text);
+                setText(text.trim());
             }
             return this;
         }

@@ -229,8 +229,6 @@ public abstract class interfazGeneral extends JFrame {
         JOptionPane.showMessageDialog(this, "Debe seleccionar un registro activo para eliminar.", "Error", JOptionPane.ERROR_MESSAGE);
     }
 }
-
-
     protected void inactivar() {
             int selectedRow = table.getSelectedRow();
             String estado = tableModel.getValueAt(selectedRow, columns-1).toString();
@@ -301,7 +299,7 @@ public abstract class interfazGeneral extends JFrame {
     cargarDatos();
 }
 
-private void resetPanelComponents(JPanel panel) {
+    private void resetPanelComponents(JPanel panel) {
     Component[] components = panel.getComponents();
     for (Component component : components) {
         if (component instanceof JTextField) {
@@ -321,8 +319,6 @@ private void resetPanelComponents(JPanel panel) {
         // Puedes agregar más condiciones según los tipos de componentes que tengas
     }
 }
-
-
 
     protected void salir() {
         dispose();

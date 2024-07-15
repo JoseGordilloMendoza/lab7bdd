@@ -159,7 +159,7 @@ public class receta_det extends interfazGeneral {
 
             if (!usedCodes.contains(codRecDet)) {
                 try (Connection conn = DatabaseConnection.getConnection();
-                     PreparedStatement pstmt = conn.prepareStatement("INSERT INTO receta_detalle (COD_REC_DET, COD_TIP_ART, INS, ING_ID, ESTADO) VALUES (?, ?, ?, ?, ?)")) {
+                     PreparedStatement pstmt = conn.prepareStatement("INSERT INTO receta_detalle (COD_REC_DET, COD_TIP_ART, INS, ING_ID, COD_RECETA, ESTADO) VALUES (?, ?, ?, ?, ?, ?)")) {
                     pstmt.setInt(1, codRecDet);
                     pstmt.setInt(2, codTipArt);
                     pstmt.setString(3, ins);
