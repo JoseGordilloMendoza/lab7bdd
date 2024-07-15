@@ -322,6 +322,7 @@ public abstract class interfazGeneral extends JFrame {
 
     protected void salir() {
         dispose();
+        CRUDInterface crudInterface = new CRUDInterface();
     }
 
     protected class CustomTableCellRenderer extends DefaultTableCellRenderer {

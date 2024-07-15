@@ -41,9 +41,26 @@ public class CRUDInterface extends JFrame {
         JButton btnSeleccionar = new JButton("Seleccionar");
         btnSeleccionar.addActionListener(e -> seleccionarTabla());
         add(btnSeleccionar, BorderLayout.SOUTH);
+        
+        JButton btnSalir = new JButton("Salir");
+        btnSalir.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                dispose(); // Cierra la ventana actual
+                new home(); // Crea una nueva instancia de la ventana Home
+            }
+        });
+        // Cambia el layout de BorderLayout a FlowLayout para el panel de botones
+        JPanel buttonPanel = new JPanel(new FlowLayout());
 
+// Añade los botones al panel
+        buttonPanel.add(btnSeleccionar);
+        buttonPanel.add(btnSalir);
+
+// Añade el panel de botones al sur de la ventana
+        add(buttonPanel, BorderLayout.SOUTH);
+        
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(500, 400);
+        setSize(500, 300);
         setVisible(true);
 
         // Aplicar la fuente predeterminada a toda la interfaz
@@ -180,6 +197,7 @@ public class CRUDInterface extends JFrame {
                     JOptionPane.showMessageDialog(this, "Tabla no reconocida", "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
+        dispose();
     }
 
     private void applyDefaultFont() {
@@ -215,9 +233,6 @@ public class CRUDInterface extends JFrame {
         }
     }    
     
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(CRUDInterface::new);
-    }
 
     private static class ComboBoxRenderer extends DefaultListCellRenderer {
         public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
