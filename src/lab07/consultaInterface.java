@@ -20,7 +20,6 @@ public class consultaInterface extends JFrame {
             if (selectedOption != null) {
                 switch (selectedOption) {
                     case "Consulta Simple":
-                        // Lógica para consulta simple
                         try{
                             new consultaSimple();}
                         catch (SQLException s){
@@ -28,8 +27,12 @@ public class consultaInterface extends JFrame {
                         }
                         break;
                     case "Consulta de Combinación":
-                        // Lógica para consulta compleja
-                        JOptionPane.showMessageDialog(this, "Consulta de Combinación seleccionada");
+                        try{
+                        new ConsultaCombinada();
+                        }
+                        catch(SQLException s){
+                            s.getMessage();
+                        }
                         break;
                     default:
                         break;

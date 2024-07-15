@@ -147,12 +147,4 @@ public class ConsultaCombinada extends JFrame {
             e.printStackTrace();
         }
     }
-
-    public static void main(String[] args) {
-        try {
-            new ConsultaCombinada();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
 }
