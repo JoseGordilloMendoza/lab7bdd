@@ -24,21 +24,14 @@ public class home extends JFrame {
         });
         add(crudButton);
 
-        JButton consultasButton = new JButton("Consultas Selección");
+        JButton consultasButton = new JButton("Consultas");
         consultasButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                new consultaInterface();
                 dispose();
             }
         });
         add(consultasButton);
-
-        JButton funcionesButton = new JButton("Consultas Función Agregada");
-        funcionesButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                dispose();
-            }
-        });
-        add(funcionesButton);
 
         JButton triggersButton = new JButton("Prueba Triggers");
         triggersButton.addActionListener(new ActionListener() {
