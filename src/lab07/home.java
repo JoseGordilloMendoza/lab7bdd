@@ -1,5 +1,7 @@
 package lab07;
 
+import java.sql.*;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -27,19 +29,31 @@ public class home extends JFrame {
         JButton consultasButton = new JButton("Consultas");
         consultasButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                new consultaInterface();
+                try{
+                    new consultaInterface();
+                }
+                catch(SQLException x){
+                    x.getMessage();
+                }
                 dispose();
             }
         });
         add(consultasButton);
 
-        JButton triggersButton = new JButton("Prueba Triggers");
-        triggersButton.addActionListener(new ActionListener() {
+        JButton vistasButton = new JButton("Vistas");
+        vistasButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+
+                try {
+                    new vistasDB();
+                } catch (SQLException x) {
+                    x.getMessage();
+                }
                 dispose();
             }
         });
-        add(triggersButton);
+        this.add(vistasButton);
+        
 
         JButton procedimientosButton = new JButton("Procedimiento Almacenado");
         procedimientosButton.addActionListener(new ActionListener() {

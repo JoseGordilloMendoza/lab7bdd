@@ -177,10 +177,10 @@ public class articulo extends interfazGeneral {
                 txtArtNom.setText(tableModel.getValueAt(selectedRow, 1).toString());
                 txtPrecArt.setText(tableModel.getValueAt(selectedRow, 2).toString());
 
-                int codTipArt = (int) tableModel.getValueAt(selectedRow, 3);
+                int codTipArt = Integer.parseInt(tableModel.getValueAt(selectedRow, 3).toString());
                 comboCodTipArt.setSelectedItem(getComboItemText(codTipArt, codTipArtMap));
 
-                int codTamArt = (int) tableModel.getValueAt(selectedRow, 4);
+                int codTamArt = Integer.parseInt(tableModel.getValueAt(selectedRow, 4).toString());
                 comboCodTamArt.setSelectedItem(getComboItemText(codTamArt, codTamArtMap));
 
                 lblEstado.setText(estado);
