@@ -62,10 +62,7 @@ public class facturaGas extends interfazGeneral {
 
     private void actualizarCostoTotal() {
         try {
-            int cantidadCal = Integer.parseInt(txtCantidadCal.getText());
-            int precioGal = (int) spnPrecioGal.getValue();
-            int costoTotal = cantidadCal * precioGal;
-            txtCostoTotal.setText(String.valueOf(costoTotal));
+            txtCostoTotal.setText("0");
         } catch (NumberFormatException e) {
             txtCostoTotal.setText("0");
         }

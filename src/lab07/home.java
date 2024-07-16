@@ -54,10 +54,27 @@ public class home extends JFrame {
         });
         this.add(vistasButton);
         
+        JButton triggersButton = new JButton("Consultas Con Funciones Agregadas");
+        triggersButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    new ConsultasConFuncionesAgregadas();
+                } catch (SQLException x) {
+                    x.getMessage();
+                }
+                dispose();
+            }
+        });
+        add(triggersButton);
 
         JButton procedimientosButton = new JButton("Procedimiento Almacenado");
         procedimientosButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                try {
+                    new ReportesApp().setVisible(true);
+                } catch (Exception x) {
+                    x.getMessage();
+                }
                 dispose();
             }
         });
