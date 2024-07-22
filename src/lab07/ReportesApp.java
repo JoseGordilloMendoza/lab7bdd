@@ -21,13 +21,15 @@ import java.io.FileNotFoundException;
 
 public class ReportesApp extends JFrame {
 
-    private JComboBox<String> comboReportes;
+        private JComboBox<String> comboReportes;
+    private JComboBox<Integer> comboAnio;
+    private JComboBox<Integer> comboMes;
     private JTable table;
     private DefaultTableModel tableModel;
     private JButton btnSalir;
     private JButton btnGenerarCSV;
     private JButton btnGenerarPDF;
-
+    private JButton btnEnviar;
 
     public ReportesApp() {
         setTitle("Generador de Reportes");
@@ -38,18 +40,28 @@ public class ReportesApp extends JFrame {
         initComponents();
         layoutComponents();
         addListeners();
-        
     }
 
     private void initComponents() {
-        comboReportes = new JComboBox<>(new String[]{"Reporte de Inventario Almacen", "Reporte Ventas 2024 JULIO"});
+        comboReportes = new JComboBox<>(new String[]{"Reporte de Inventario Almacen", "Reporte Ventas Mensuales"});
         tableModel = new DefaultTableModel();
         table = new JTable(tableModel);
         table.setShowGrid(true); // Mostrar líneas de la tabla para mejor visibilidad
         btnSalir = new JButton("Salir");
         btnGenerarCSV = new JButton("Generar CSV");
         btnGenerarPDF = new JButton("Generar PDF");
+        btnEnviar = new JButton("Enviar");
 
+        // Añadir ComboBox para seleccionar año y mes
+        comboAnio = new JComboBox<>();
+        for (int year = 2020; year <= 2030; year++) {
+            comboAnio.addItem(year);
+        }
+
+        comboMes = new JComboBox<>();
+        for (int month = 1; month <= 12; month++) {
+            comboMes.addItem(month);
+        }
     }
 
     private void layoutComponents() {
@@ -59,6 +71,13 @@ public class ReportesApp extends JFrame {
         panelNorth.add(new JLabel("Seleccione el Reporte:"));
         panelNorth.add(comboReportes);
 
+        // Añadir ComboBox de año y mes al panel
+        panelNorth.add(new JLabel("Año:"));
+        panelNorth.add(comboAnio);
+        panelNorth.add(new JLabel("Mes:"));
+        panelNorth.add(comboMes);
+        panelNorth.add(btnEnviar);
+
         JScrollPane scrollPane = new JScrollPane(table);
 
         JPanel panelSouth = new JPanel();
@@ -66,25 +85,40 @@ public class ReportesApp extends JFrame {
         panelSouth.add(btnSalir);
         panelSouth.add(btnGenerarPDF);
 
-
         add(panelNorth, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(panelSouth, BorderLayout.SOUTH);
+
+        // Inicialmente ocultamos los selectores de fecha y el botón de enviar
+        comboAnio.setVisible(false);
+        comboMes.setVisible(false);
+        btnEnviar.setVisible(false);
     }
 
     private void addListeners() {
-        comboReportes.addActionListener(e -> cargarReporte());
+        comboReportes.addActionListener(e -> toggleDateSelectors());
         btnSalir.addActionListener(e -> System.exit(0));
         btnGenerarCSV.addActionListener(e -> generarCSV());
         btnGenerarPDF.addActionListener(e -> generarPDF());
+        btnEnviar.addActionListener(e -> cargarReporte());
+    }
 
+    private void toggleDateSelectors() {
+        boolean isVentasMensuales = "Reporte Ventas Mensuales".equals(comboReportes.getSelectedItem());
+        comboAnio.setVisible(isVentasMensuales);
+        comboMes.setVisible(isVentasMensuales);
+        btnEnviar.setVisible(isVentasMensuales);
+
+        if (!isVentasMensuales) {
+            cargarReporte();
+        }
     }
 
     private void cargarReporte() {
         String reporteSeleccionado = (String) comboReportes.getSelectedItem();
         if ("Reporte de Inventario Almacen".equals(reporteSeleccionado)) {
             cargarReporteInventarioAlmacen();
-        } else if ("Reporte de Ventas Mensuales".equals(reporteSeleccionado)) {
+        } else if ("Reporte Ventas Mensuales".equals(reporteSeleccionado)) {
             cargarReporteVentasMensuales();
         }
     }
@@ -95,14 +129,17 @@ public class ReportesApp extends JFrame {
     }
 
     private void cargarReporteVentasMensuales() {
+        int anioSeleccionado = (int) comboAnio.getSelectedItem();
+        int mesSeleccionado = (int) comboMes.getSelectedItem();
+
         String query = "{CALL reporte_pedidos_mensuales(?, ?)}";
         try (Connection conn = DatabaseConnection.getConnection(); CallableStatement stmt = conn.prepareCall(query)) {
 
-            stmt.setInt(1, 2024); // Año
-            stmt.setInt(2, 7);    // Mes (Julio)
+            stmt.setInt(1, anioSeleccionado); // Año
+            stmt.setInt(2, mesSeleccionado);  // Mes
 
             System.out.println("Ejecutando consulta: " + query);
-            System.out.println("Parámetros: Año = 2024, Mes = 7");
+            System.out.println("Parámetros: Año = " + anioSeleccionado + ", Mes = " + mesSeleccionado);
 
             ResultSet rs = stmt.executeQuery();
             if (!rs.isBeforeFirst()) {
@@ -119,8 +156,7 @@ public class ReportesApp extends JFrame {
     }
 
     private void cargarReporteDesdeDB(String query) {
-        try (Connection conn = DatabaseConnection.getConnection();
-             CallableStatement stmt = conn.prepareCall(query)) {
+        try (Connection conn = DatabaseConnection.getConnection(); CallableStatement stmt = conn.prepareCall(query)) {
 
             cargarResultadosEnTabla(stmt);
 
@@ -160,7 +196,6 @@ public class ReportesApp extends JFrame {
             System.out.println("Número de filas agregadas: " + rowCount);
         }
     }
-
 
     private void generarCSV() {
         String reporteSeleccionado = (String) comboReportes.getSelectedItem();

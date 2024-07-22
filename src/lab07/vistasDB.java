@@ -35,7 +35,7 @@ public class vistasDB extends JFrame {
         gbc.gridy = 0;
         topPanel.add(vistaLabel, gbc);
 
-        vistaSelector = new JComboBox<>(new String[]{"vista_articulo", "vista_repartidor"}); // Aquí deben estar las vistas de tu base de datos
+        vistaSelector = new JComboBox<>(new String[]{"vista_articulo", "vista_repartidor", "vista_costo_repartidor", "vista_almacenes"}); // Aquí deben estar las vistas de tu base de datos
         vistaSelector.addActionListener(e -> {
             String selectedVista = (String) vistaSelector.getSelectedItem();
             if (selectedVista != null) {
