@@ -39,6 +39,7 @@ public class ReportesApp extends JFrame {
     private JButton btnGenerarCSV;
     private JButton btnGenerarPDF;
     private JButton btnEnviar;
+    private JButton btnGenerarBoleta;
 
     public ReportesApp() {
         setTitle("Generador de Reportes");
@@ -54,11 +55,13 @@ public class ReportesApp extends JFrame {
 
     private void initComponents() {
         comboReportes = new JComboBox<>(new String[]{
-            "Reporte de Inventario Almacen",
-            "Reporte Ventas Mensuales",
-            "Reporte de Pedidos por Procedencia"
+                "Reporte de Inventario Almacen",
+                "Reporte Ventas Mensuales",
+                "Reporte de Pedidos por Procedencia",
+                "Generar Boleta" // Nueva opción
         });
-
+        
+        btnGenerarBoleta = new JButton("Generar Boleta");
         comboAnio = new JComboBox<>();
         for (int year = 2020; year <= 2025; year++) {
             comboAnio.addItem(year);
@@ -93,6 +96,8 @@ public class ReportesApp extends JFrame {
         labelAnio.setVisible(false);
         labelMes.setVisible(false);
         labelAlmacen.setVisible(false);
+        
+        
     }
 
 
@@ -156,6 +161,9 @@ public class ReportesApp extends JFrame {
         add(panelNorth, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
         add(panelSouth, BorderLayout.SOUTH);
+        
+        panelNorth.add(btnGenerarBoleta); 
+        btnGenerarBoleta.setVisible(false);
     }
 
 
@@ -171,6 +179,9 @@ public class ReportesApp extends JFrame {
                 cargarReporte();
             }
         });
+        
+        btnGenerarBoleta.addActionListener(e -> generarBoleta()); // Listener para el botón Generar Boleta
+
     }
 
 
@@ -180,7 +191,14 @@ public class ReportesApp extends JFrame {
         boolean isVentasMensuales = "Reporte Ventas Mensuales".equals(selectedReport);
         boolean isInventarioAlmacen = "Reporte de Inventario Almacen".equals(selectedReport);
         boolean isPedidosPorProcedencia = "Reporte de Pedidos por Procedencia".equals(selectedReport);
+        
+        boolean isGenerarBoleta = "Generar Boleta".equals(selectedReport);
 
+// Añadir esta línea al final del método
+         // Mostrar botón Generar Boleta solo si se selecciona esa opción
+
+        
+        
         comboAnio.setVisible(isVentasMensuales);
         labelAnio.setVisible(isVentasMensuales);
         comboMes.setVisible(isVentasMensuales);
@@ -190,8 +208,66 @@ public class ReportesApp extends JFrame {
         labelAlmacen.setVisible(isInventarioAlmacen);
 
         btnEnviar.setVisible(isVentasMensuales || isInventarioAlmacen || isPedidosPorProcedencia);
+        btnGenerarBoleta.setVisible(isGenerarBoleta);
     }
 
+    private void generarBoleta() {
+        String input = JOptionPane.showInputDialog(this, "Ingrese el código de la boleta:", "Generar Boleta", JOptionPane.PLAIN_MESSAGE);
+        if (input != null && !input.trim().isEmpty()) {
+            try {
+                BigDecimal codBol = new BigDecimal(input.trim());
+                String query = "{CALL generar_boleta(?)}";
+                try (Connection conn = DatabaseConnection.getConnection(); CallableStatement stmt = conn.prepareCall(query)) {
+                    stmt.setBigDecimal(1, codBol);
+
+                    boolean hasResults = stmt.execute();
+                    int resultSetCount = 0;
+
+                    while (hasResults) {
+                        resultSetCount++;
+                        try (ResultSet rs = stmt.getResultSet()) {
+                            cargarResultadosEnTabla(rs, resultSetCount);
+                        }
+
+                        hasResults = stmt.getMoreResults();
+                    }
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Error al generar la boleta: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException e) {
+                JOptionPane.showMessageDialog(this, "Código de boleta inválido.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void cargarResultadosEnTabla(ResultSet rs, int resultSetCount) throws SQLException {
+        ResultSetMetaData metaData = rs.getMetaData();
+
+        // Limpiar modelo de tabla solo para el primer ResultSet
+        if (resultSetCount == 1) {
+            tableModel.setRowCount(0);
+            tableModel.setColumnCount(0);
+        }
+
+        // Agregar nombres de columnas solo para el primer ResultSet
+        if (resultSetCount == 1) {
+            int columnCount = metaData.getColumnCount();
+            for (int i = 1; i <= columnCount; i++) {
+                tableModel.addColumn(metaData.getColumnLabel(i));
+            }
+        }
+
+        // Agregar filas a la tabla
+        while (rs.next()) {
+            int columnCount = metaData.getColumnCount();
+            Object[] row = new Object[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                row[i - 1] = rs.getObject(i);
+            }
+            tableModel.addRow(row);
+        }
+    }
 
 
 

@@ -10,10 +10,13 @@ import java.sql.Statement;
 import java.util.Date;
 import javax.swing.JComboBox;
 import javax.swing.JOptionPane;
+import javax.swing.JSpinner;
 import javax.swing.SwingUtilities;
 import javax.swing.JTextField;
+import javax.swing.SpinnerNumberModel;
 
 public class boleta extends interfazGeneral {
+    private JSpinner spinnerCodFra;
 
     private JDateChooser dateChooser;
     private JComboBox<String> comboRegSco;
@@ -31,6 +34,8 @@ public class boleta extends interfazGeneral {
     }
 
     private void cargarComponentes() {
+        spinnerCodFra = new JSpinner(new SpinnerNumberModel(0, 0, Integer.MAX_VALUE, 1));
+
         dateChooser = new JDateChooser();
         comboRegSco = new JComboBox<>();
         comboPedId = new JComboBox<>();
@@ -65,14 +70,16 @@ public class boleta extends interfazGeneral {
         addExtraComponent(0, dateChooser);
         addExtraComponent(1, comboRegSco);
         addExtraComponent(2, comboPedId);
-        addExtraComponent(3, txtTotal);
+        addExtraComponent(3, spinnerCodFra); // Ajusta el índice según el diseño de tu panel
+
+        addExtraComponent(4, txtTotal);
     }
 
     @Override
     protected void cargarDatos() {
         try (Connection conn = DatabaseConnection.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID, TOTAL, ESTADO FROM boleta")) {
+             ResultSet rs = stmt.executeQuery("SELECT COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID,COD_FRA, TOTAL, ESTADO FROM boleta")) {
             tableModel.setRowCount(0); // Limpiar la tabla antes de cargar datos
             while (rs.next()) {
                 // Obtener nombre del registro SCO usando su código
@@ -82,6 +89,7 @@ public class boleta extends interfazGeneral {
                     rs.getString("FECH_BOL"),
                     codRegSco + "",
                     rs.getInt("PED_ID"),
+                    rs.getInt("COD_FRA"),
                     rs.getBigDecimal("TOTAL"),
                     rs.getString("ESTADO")
                 });
@@ -93,6 +101,8 @@ public class boleta extends interfazGeneral {
 
     @Override
     protected void adicionar() {
+        int codFra = (int) spinnerCodFra.getValue();
+
         int codBol = Integer.parseInt(txtCodigo.getText());
         String fechaBoleta = formatDate(dateChooser.getDate());
         String regScoItem = (String) comboRegSco.getSelectedItem();
@@ -115,13 +125,14 @@ public class boleta extends interfazGeneral {
         }
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO boleta (COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID, TOTAL, ESTADO) VALUES (?, ?, ?, ?, ?, ?)")) {
+             PreparedStatement pstmt = conn.prepareStatement("INSERT INTO boleta (COD_BOL, FECH_BOL, COD_REG_SCO, PED_ID, COD_FRA, TOTAL, ESTADO) VALUES (?, ?, ?, ?, ?, ?)")) {
             pstmt.setInt(1, codBol);
             pstmt.setString(2, fechaBoleta);
             pstmt.setInt(3, codRegSco);
             pstmt.setInt(4, pedId);
-            pstmt.setDouble(5, total);
-            pstmt.setString(6, estado);
+            pstmt.setInt(5, codFra);
+            pstmt.setDouble(6, total);
+            pstmt.setString(7, estado);
             pstmt.executeUpdate();
             cargarDatos();
             cancelar();
@@ -136,7 +147,7 @@ public class boleta extends interfazGeneral {
         int selectedRow = table.getSelectedRow();
         if (selectedRow != -1) {
             int codBol = (int) tableModel.getValueAt(selectedRow, 0);
-            String estado = tableModel.getValueAt(selectedRow, 5).toString();
+            String estado = tableModel.getValueAt(selectedRow, 6).toString();
 
             if (!estado.equals("*") && !estado.equals("I")) {
                 txtCodigo.setText(codBol + "");
@@ -146,7 +157,9 @@ public class boleta extends interfazGeneral {
                 comboRegSco.setSelectedItem(getComboItemText(codRegSco, comboRegSco));
                 int pedId = (int) tableModel.getValueAt(selectedRow, 3);
                 comboPedId.setSelectedItem(String.valueOf(pedId));
-                txtTotal.setText(tableModel.getValueAt(selectedRow, 4).toString());
+                spinnerCodFra.setValue(tableModel.getValueAt(selectedRow, 4)); // Ajusta el índice según el diseño de tu tabla
+
+                txtTotal.setText(tableModel.getValueAt(selectedRow, 5).toString());
                 lblEstado.setText(estado);
                 actualizarTotal();
                 operation = "mod";
@@ -229,6 +242,8 @@ public class boleta extends interfazGeneral {
 
     @Override
     protected void actualizar() {
+        int codFra = (int) spinnerCodFra.getValue();
+
         int codBol = Integer.parseInt(txtCodigo.getText());
         String fechaBoleta = formatDate(dateChooser.getDate());
         String regScoItem = (String) comboRegSco.getSelectedItem();
@@ -238,13 +253,14 @@ public class boleta extends interfazGeneral {
         double total = calcularTotal(codRegSco, pedId);
 
         try (Connection conn = DatabaseConnection.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement("UPDATE boleta SET FECH_BOL = ?, COD_REG_SCO = ?, PED_ID = ?, TOTAL = ?, ESTADO = ? WHERE COD_BOL = ?")) {
+             PreparedStatement pstmt = conn.prepareStatement("UPDATE boleta SET FECH_BOL = ?, COD_REG_SCO = ?, PED_ID = ?, COD_FRA = ?, TOTAL = ?, ESTADO = ? WHERE COD_BOL = ?")) {
             pstmt.setString(1, fechaBoleta);
             pstmt.setInt(2, codRegSco);
             pstmt.setInt(3, pedId);
-            pstmt.setDouble(4, total);
-            pstmt.setString(5, estado);
-            pstmt.setInt(6, codBol);
+             pstmt.setInt(4, codFra);
+            pstmt.setDouble(5, total);
+            pstmt.setString(6, estado);
+            pstmt.setInt(7, codBol);
             pstmt.executeUpdate();
             cargarDatos();
             cancelar();
