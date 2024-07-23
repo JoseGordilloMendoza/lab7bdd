@@ -107,6 +107,7 @@ public class CRUDInterface extends JFrame {
                 model.addElement("receta_det");
                 model.addElement("receta");
                 model.addElement("scooter");
+                model.addElement("prodcedencia pedido");
                 break;
         }
         tableSelector.setModel(model);
@@ -192,6 +193,9 @@ public class CRUDInterface extends JFrame {
                     break;
                 case "scooter":
                     new scooter();
+                    break;
+                case "prodcedencia pedido":
+                    new prod_ped();
                     break;
                 default:
                     JOptionPane.showMessageDialog(this, "Tabla no reconocida", "Error", JOptionPane.ERROR_MESSAGE);
